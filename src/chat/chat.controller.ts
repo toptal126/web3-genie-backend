@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, UseGuards, Delete } from '@nestjs/common';
 import { ChatService } from './chat.service';
 
 @Controller('chat')
@@ -23,5 +23,10 @@ export class ChatController {
   @Post('message')
   async sendMessage(@Body() body: { conversationId: number; content: string }) {
     return this.chatService.sendMessage(body.conversationId, body.content);
+  }
+
+  @Delete('conversation/:id')
+  async deleteConversation(@Param('id') id: number) {
+    return this.chatService.deleteConversation(id);
   }
 }

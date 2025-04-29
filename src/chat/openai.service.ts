@@ -13,6 +13,7 @@ export class OpenAIService {
   ) {
     this.openai = new OpenAI({
       apiKey: this.configService.get<string>('OPENAI_API_KEY'),
+      baseURL: 'https://api.deepseek.com',
     });
   }
 
@@ -28,21 +29,23 @@ export class OpenAIService {
           role: 'system',
           content:
             (systemPrompt as { value: string })?.value ||
-            'You are a helpful AI assistant with Web3 knowledge.',
+            'You are a helpful AI assistant with Web3 knowledge. Result should be in styled markdown, and should include external sources. You must Use web search for latest updates.',
         },
         ...messages,
       ];
 
       const options: any = {
-        model: 'gpt-4',
+        // model: 'gpt-4o-search-preview',
+        model: 'deepseek-reasoner',
         messages: fullMessages,
-        temperature: 0.7,
+        temperature: 1,
       };
 
       if (functions && functions.length > 0) {
         options.functions = functions;
         options.function_call = 'auto';
       }
+      console.log(options);
 
       const response = await this.openai.chat.completions.create(options);
       return response.choices[0].message;

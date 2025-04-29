@@ -64,4 +64,25 @@ export class ChatService {
 
     return aiResponse;
   }
+
+  async deleteConversation(conversationId: number) {
+    // First delete all messages associated with the conversation
+    this.databaseService.run(
+      'DELETE FROM messages WHERE conversation_id = ?',
+      [conversationId]
+    );
+
+    // Then delete the conversation itself
+    const result = this.databaseService.run(
+      'DELETE FROM conversations WHERE id = ?',
+      [conversationId]
+    );
+
+    return { 
+      success: result.changes > 0,
+      message: result.changes > 0 
+        ? 'Conversation and all associated messages deleted successfully' 
+        : 'Conversation not found'
+    };
+  }
 }
