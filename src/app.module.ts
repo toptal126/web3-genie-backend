@@ -6,9 +6,10 @@ import { ChatModule } from './chat/chat.module';
 import { Web3Module } from './web3/web3.module';
 import { AdminModule } from './admin/admin.module';
 import { DatabaseModule } from './database/database.module';
+import { UserModule } from './user/user.module';
 
 @Module({
-  imports: [AuthModule, ChatModule, Web3Module, AdminModule, DatabaseModule],
+  imports: [AuthModule, ChatModule, Web3Module, AdminModule, DatabaseModule, UserModule],
   controllers: [AppController],
   providers: [AppService],
 })
