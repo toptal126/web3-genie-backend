@@ -1,11 +1,17 @@
 import { Controller, Get, Query, ValidationPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiQuery,
+  ApiProperty,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { Observable } from 'rxjs';
 import { NewsService } from './news.service';
 import {
   NewsSearchResponse,
   NewsSearchParams,
-} from '../../interfaces/news.interface';
+} from '@interfaces/news.interface';
 
 @ApiTags('news')
 @Controller('news')

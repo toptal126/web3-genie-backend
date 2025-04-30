@@ -16,6 +16,22 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "@modules/*": ["src/modules/*"],
+      "@interfaces/*": ["src/interfaces/*"],
+      "@config/*": ["src/config/*"],
+      "@utils/*": ["src/utils/*"],
+      "@decorators/*": ["src/decorators/*"],
+      "@constants/*": ["src/constants/*"],
+      "@middlewares/*": ["src/middlewares/*"],
+      "@auth/*": ["src/modules/auth/*"],
+      "@user/*": ["src/modules/user/*"],
+      "@admin/*": ["src/modules/admin/*"],
+      "@chat/*": ["src/modules/chat/*"],
+      "@database/*": ["src/modules/database/*"],
+      "@web3/*": ["src/modules/web3/*"],
+      "@news/*": ["src/modules/news/*"]
+    }
   }
 }
