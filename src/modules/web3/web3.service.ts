@@ -1,22 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { EvmService } from './evm/evm.service';
 import { SolanaService } from './solana/solana.service';
-import { DatabaseService } from '../database/database.service';
+import { SystemConfigModel } from '../database/models/system-config.model';
 
 @Injectable()
 export class Web3Service {
   constructor(
     private evmService: EvmService,
     private solanaService: SolanaService,
-    private databaseService: DatabaseService,
+    private systemConfigModel: SystemConfigModel,
   ) {}
 
   async isWeb3Enabled() {
-    const config = this.databaseService.queryOne(
-      'SELECT value FROM system_configs WHERE key = ?',
-      ['web3_enabled'],
-    );
-    return (config as { value: string })?.value === 'true';
+    const value = await this.systemConfigModel.get('web3_enabled');
+    return value === 'true';
   }
 
   async getTokenPrice(token: string, network: string) {

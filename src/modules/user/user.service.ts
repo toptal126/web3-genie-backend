@@ -1,20 +1,17 @@
-import { Injectable } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { UserModel } from './models/user.model';
+import { User } from '../database/schemas/user.schema';
 
 @Injectable()
 export class UserService {
-  constructor(private databaseService: DatabaseService) {}
+  constructor(private userModel: UserModel) {}
 
-  async createUser(walletAddress: string) {
+  async createUser(walletAddress: string): Promise<User> {
     try {
-      const result = this.databaseService.run(
-        'INSERT INTO users (wallet_address) VALUES (?)',
-        [walletAddress]
-      );
-      return { id: result.lastInsertRowid, walletAddress };
+      return await this.userModel.create(walletAddress);
     } catch (error) {
       // Check if user already exists
-      if (error.message.includes('UNIQUE constraint failed')) {
+      if (error.code === 11000) { // MongoDB duplicate key error
         const existingUser = await this.getUserByWalletAddress(walletAddress);
         return existingUser;
       }
@@ -22,30 +19,31 @@ export class UserService {
     }
   }
 
-  async getUserById(id: number) {
-    return this.databaseService.queryOne(
-      'SELECT * FROM users WHERE id = ?',
-      [id]
-    );
+  async getUserById(id: string): Promise<User> {
+    const user = await this.userModel.findById(id);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return user;
   }
 
-  async getUserByWalletAddress(walletAddress: string) {
-    return this.databaseService.queryOne(
-      'SELECT * FROM users WHERE wallet_address = ?',
-      [walletAddress]
-    );
+  async getUserByWalletAddress(walletAddress: string): Promise<User> {
+    const user = await this.userModel.findByWalletAddress(walletAddress);
+    if (!user) {
+      throw new NotFoundException(`User with wallet address ${walletAddress} not found`);
+    }
+    return user;
   }
 
-  async getAllUsers() {
-    return this.databaseService.query(
-      'SELECT * FROM users ORDER BY created_at DESC'
-    );
+  async getAllUsers(): Promise<User[]> {
+    return this.userModel.findAll();
   }
 
-  async deleteUser(id: number) {
-    return this.databaseService.run(
-      'DELETE FROM users WHERE id = ?',
-      [id]
-    );
+  async deleteUser(id: string): Promise<boolean> {
+    const deleted = await this.userModel.delete(id);
+    if (!deleted) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return true;
   }
 }

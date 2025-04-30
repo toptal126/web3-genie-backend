@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
-import { DatabaseService } from '../database/database.service';
+import { SystemConfigModel } from '../database/models/system-config.model';
 
 @Injectable()
 export class OpenAIService {
@@ -9,7 +9,7 @@ export class OpenAIService {
 
   constructor(
     private configService: ConfigService,
-    private databaseService: DatabaseService,
+    private systemConfigModel: SystemConfigModel,
   ) {
     this.openai = new OpenAI({
       apiKey: this.configService.get<string>('OPENAI_API_KEY'),
@@ -19,16 +19,13 @@ export class OpenAIService {
 
   async generateChatCompletion(messages: any[], functions?: any[]) {
     try {
-      const systemPrompt = this.databaseService.queryOne(
-        'SELECT value FROM system_configs WHERE key = ?',
-        ['system_prompt'],
-      );
+      const systemPrompt = await this.systemConfigModel.get('system_prompt');
 
       const fullMessages = [
         {
           role: 'system',
           content:
-            (systemPrompt as { value: string })?.value ||
+            systemPrompt ||
             'You are a helpful AI assistant with Web3 knowledge. Result should be in styled markdown, and should include external sources. You must Use web search for latest updates.',
         },
         ...messages,

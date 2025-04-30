@@ -1,126 +1,80 @@
-# Web3 Genie Backend
+# Web3 Genie Backend 🚀
 
-Web3 Genie Backend is a robust API service built with NestJS that provides Web3 integration capabilities, wallet-based authentication, and AI-powered chat functionality. This backend service is designed to support Web3 applications with a focus on security, scalability, and developer experience.
+A powerful, scalable backend service for Web3 applications, built with NestJS and MongoDB. This service provides robust APIs for blockchain interactions, AI-powered chat, and comprehensive Web3 data management.
 
-## Overview
+## ✨ Features
 
-Web3 Genie Backend is a robust API service built with NestJS that provides Web3 integration capabilities, wallet-based authentication, and AI-powered chat functionality. This backend service is designed to support Web3 applications with a focus on security, scalability, and developer experience.
+- 🤖 **AI-Powered Chat System**
+  - Intelligent conversation management
+  - Context-aware responses
+  - Web3-specific knowledge base
 
-## Key Features
+- 🔗 **Blockchain Integration**
+  - Multi-chain support (EVM, Solana)
+  - Real-time token price tracking
+  - Volume analytics
+  - Transaction monitoring
 
-- **Web3 Integration**: Connect and interact with blockchain networks
-- **Wallet-Based Authentication**: Secure user authentication using wallet addresses
-- **AI-Powered Chat**: Intelligent conversational capabilities powered by OpenAI
-- **SQLite Database**: Lightweight, efficient data storage
-- **RESTful API**: Well-structured endpoints for client applications
+- 🛡️ **Security First**
+  - JWT authentication
+  - Role-based access control
+  - Secure API endpoints
+  - Environment-based configuration
 
-## Technology Stack
+- 📊 **Advanced Analytics**
+  - Token price tracking
+  - Volume analysis
+  - Market trend insights
+  - Custom metrics
 
-- **Framework**: NestJS 11.x
-- **Runtime**: Node.js 23.x
-- **Package Manager**: pnpm
-- **Database**: SQLite (via better-sqlite3)
-- **AI Integration**: OpenAI API
-- **Testing**: Jest
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 23 or later
-- pnpm package manager
-- OpenAI API key (for chat functionality)
-
-### Installation
+## 🚀 Quick Start
 
 ```bash
-$ pnpm install
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+
+# Start development server
+npm run start:dev
 ```
 
-### Configuration
+## 🔧 Configuration
 
-Create a `.env` file in the root directory with the following variables:
+Create a `.env` file with the following variables:
 
-```
+```env
+MONGODB_URI=your_mongodb_uri
+BRAVE_API_TOKEN=brave_api_key
 OPENAI_API_KEY=your_openai_api_key
 ```
 
-### Running the Application
+## 📚 API Documentation
 
-```bash
-# Development mode
-$ pnpm run start
+Once the server is running, visit `http://localhost:3000/api` for the complete API documentation.
 
-# Watch mode (recommended for development)
-$ pnpm run start:dev
+## 🛠️ Tech Stack
 
-# Production mode
-$ pnpm run start:prod
-```
+- **Framework:** NestJS
+- **Database:** MongoDB
+- **Authentication:** JWT
+- **AI Integration:** OpenAI
+- **Blockchain:** Web3.js, Solana Web3
+- **Documentation:** Swagger/OpenAPI
 
-## API Endpoints
+## 🤝 Contributing
 
-### Authentication
+We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
-- `POST /auth/wallet` - Authenticate using a wallet address
+## 📄 License
 
-### Users
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-- `GET /users` - Get all users
-- `GET /users/:id` - Get user by ID
-- `GET /users/wallet/:address` - Get user by wallet address
-- `POST /users` - Create a new user
-- `DELETE /users/:id` - Delete a user
+## 🌟 Support
 
-## Testing
+For support, email support@web3genie.com or join our [Discord community](https://discord.gg/web3genie).
 
-```bash
-# Unit tests
-$ pnpm run test
+---
 
-# End-to-end tests
-$ pnpm run test:e2e
-
-# Test coverage
-$ pnpm run test:cov
-```
-
-## Project Structure
-
-The application follows the standard NestJS modular architecture:
-
-- `src/app.module.ts` - Main application module
-- `src/auth` - Authentication functionality
-- `src/user` - User management
-- `src/chat` - OpenAI integration for chat capabilities
-- `src/web3` - Web3 integration services
-- `src/database` - Database connection and services
-- `src/admin` - Administrative functionality
-
-## Deployment
-
-For production deployment, build the application and run it with Node.js:
-
-```bash
-$ pnpm approve-builds
-$ pnpm run build
-$ pnpm run start:prod
-```
-
-When you are facing with sqlite3 issue, run the following commands:
-
-```bash
-$ cd node_modules
-$ cd better-sqlite3
-$ pnpm run build-release
-```
-
-For detailed deployment options and best practices, refer to the [NestJS deployment documentation](https://docs.nestjs.com/deployment).
-
-## Contributing
-
-Please read our contribution guidelines before submitting pull requests.
-
-## License
-
-This project is [MIT licensed](LICENSE).
+Built with ❤️ by the Web3 Genie Team

@@ -33,7 +33,7 @@ export class UserController {
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'number' },
+        id: { type: 'string' },
         walletAddress: { type: 'string' },
         createdAt: { type: 'string' },
         updatedAt: { type: 'string' },
@@ -54,7 +54,7 @@ export class UserController {
       items: {
         type: 'object',
         properties: {
-          id: { type: 'number' },
+          id: { type: 'string' },
           walletAddress: { type: 'string' },
           createdAt: { type: 'string' },
           updatedAt: { type: 'string' },
@@ -70,7 +70,7 @@ export class UserController {
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiParam({
     name: 'id',
-    type: 'number',
+    type: 'string',
     description: 'User ID',
     example: 1,
   })
@@ -80,7 +80,7 @@ export class UserController {
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'number' },
+        id: { type: 'string' },
         walletAddress: { type: 'string' },
         createdAt: { type: 'string' },
         updatedAt: { type: 'string' },
@@ -88,7 +88,7 @@ export class UserController {
     },
   })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async getUserById(@Param('id') id: number) {
+  async getUserById(@Param('id') id: string) {
     return this.userService.getUserById(id);
   }
 
@@ -122,13 +122,13 @@ export class UserController {
   @ApiOperation({ summary: 'Delete user by ID' })
   @ApiParam({
     name: 'id',
-    type: 'number',
+    type: 'string',
     description: 'User ID',
     example: 1,
   })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async deleteUser(@Param('id') id: number) {
+  async deleteUser(@Param('id') id: string) {
     return this.userService.deleteUser(id);
   }
 }

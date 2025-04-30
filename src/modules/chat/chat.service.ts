@@ -1,88 +1,69 @@
-import { Injectable } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { OpenAIService } from './openai.service';
+import { ConversationModel } from './models/conversation.model';
+import { MessageModel } from './models/message.model';
+import { Conversation } from '../database/schemas/conversation.schema';
+import { Message } from '../database/schemas/message.schema';
 
 @Injectable()
 export class ChatService {
   constructor(
-    private databaseService: DatabaseService,
+    private conversationModel: ConversationModel,
+    private messageModel: MessageModel,
     private openaiService: OpenAIService,
   ) {}
 
-  async createConversation(userId: number, title: string) {
-    const result = this.databaseService.run(
-      'INSERT INTO conversations (user_id, title) VALUES (?, ?)',
-      [userId, title]
-    );
-    return { id: result.lastInsertRowid };
+  async createConversation(userId: string, title: string): Promise<Conversation> {
+    return this.conversationModel.create(userId, title);
   }
 
-  async getConversations(userId: number) {
-    return this.databaseService.query(
-      'SELECT * FROM conversations WHERE user_id = ? ORDER BY created_at DESC',
-      [userId]
-    );
+  async getConversations(userId: string): Promise<Conversation[]> {
+    return this.conversationModel.findByUserId(userId);
   }
 
-  async getConversation(conversationId: number) {
-    const conversation = this.databaseService.queryOne(
-      'SELECT * FROM conversations WHERE id = ?',
-      [conversationId]
-    );
+  async getConversation(conversationId: string): Promise<{ conversation: Conversation; messages: Message[] }> {
+    const conversation = await this.conversationModel.findById(conversationId);
+    if (!conversation) {
+      throw new NotFoundException(`Conversation with ID ${conversationId} not found`);
+    }
 
-    if (!conversation) return null;
-
-    const messages = this.databaseService.query(
-      'SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at ASC',
-      [conversationId]
-    );
-
-    return { ...conversation, messages };
+    const messages = await this.messageModel.findByConversationId(conversationId);
+    return { conversation, messages };
   }
 
-  async sendMessage(conversationId: number, content: string) {
+  async sendMessage(conversationId: string, content: string): Promise<Message> {
+    // Check if conversation exists
+    const conversation = await this.conversationModel.findById(conversationId);
+    if (!conversation) {
+      throw new NotFoundException(`Conversation with ID ${conversationId} not found`);
+    }
+
     // Store user message
-    this.databaseService.run(
-      'INSERT INTO messages (conversation_id, role, content) VALUES (?, ?, ?)',
-      [conversationId, 'user', content]
-    );
+    await this.messageModel.create(conversationId, 'user', content);
 
     // Get conversation history
-    const messages = this.databaseService.query(
-      'SELECT role, content FROM messages WHERE conversation_id = ? ORDER BY created_at ASC',
-      [conversationId]
-    );
+    const messages = await this.messageModel.findByConversationId(conversationId);
 
     // Generate AI response
     const aiResponse = await this.openaiService.generateChatCompletion(messages);
 
     // Store AI response
-    this.databaseService.run(
-      'INSERT INTO messages (conversation_id, role, content) VALUES (?, ?, ?)',
-      [conversationId, 'assistant', aiResponse.content]
+    const aiMessage = await this.messageModel.create(
+      conversationId,
+      'assistant',
+      aiResponse.content || 'No response generated',
     );
 
-    return aiResponse;
+    return aiMessage;
   }
 
-  async deleteConversation(conversationId: number) {
-    // First delete all messages associated with the conversation
-    this.databaseService.run(
-      'DELETE FROM messages WHERE conversation_id = ?',
-      [conversationId]
-    );
-
-    // Then delete the conversation itself
-    const result = this.databaseService.run(
-      'DELETE FROM conversations WHERE id = ?',
-      [conversationId]
-    );
-
-    return { 
-      success: result.changes > 0,
-      message: result.changes > 0 
-        ? 'Conversation and all associated messages deleted successfully' 
-        : 'Conversation not found'
+  async deleteConversation(conversationId: string): Promise<{ success: boolean; message: string }> {
+    const deleted = await this.conversationModel.delete(conversationId);
+    return {
+      success: deleted,
+      message: deleted
+        ? 'Conversation and all associated messages deleted successfully'
+        : 'Conversation not found',
     };
   }
 }
