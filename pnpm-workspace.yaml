@@ -2,4 +2,5 @@ onlyBuiltDependencies:
   - '@nestjs/core'
   - '@scarf/scarf'
   - '@swc/core'
-  - better-sqlite3
+packages:
+  - 'packages/*' # or whatever your workspace directories are

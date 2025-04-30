@@ -2,9 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { EvmService } from './evm/evm.service';
 import { SolanaService } from './solana/solana.service';
 import { SystemConfigModel } from '../database/models/system-config.model';
+import {
+  Network,
+  TokenPriceResponse,
+  TokenVolumeResponse,
+  Web3ServiceInterface,
+  NetworkType,
+  NetworkName,
+} from './interfaces/web3.interface';
 
 @Injectable()
-export class Web3Service {
+export class Web3Service implements Web3ServiceInterface {
   constructor(
     private evmService: EvmService,
     private solanaService: SolanaService,
@@ -16,37 +24,40 @@ export class Web3Service {
     return value === 'true';
   }
 
-  async getTokenPrice(token: string, network: string) {
+  async getTokenPrice(
+    token: string,
+    network: Network,
+  ): Promise<TokenPriceResponse> {
     if (!(await this.isWeb3Enabled())) {
       throw new Error('Web3 features are disabled');
     }
 
-    if (
-      network.toLowerCase() === 'evm' ||
-      network.toLowerCase() === 'ethereum'
-    ) {
-      return this.evmService.getTokenPrice(token);
-    } else if (network.toLowerCase() === 'solana') {
-      return this.solanaService.getTokenPrice(token);
+    if (network.type === NetworkType.EVM) {
+      return this.evmService.getTokenPrice(token, network.name as NetworkName);
+    } else if (network.type === NetworkType.SOLANA) {
+      return this.solanaService.getTokenPrice(
+        token,
+        network.name as NetworkName,
+      );
     } else {
-      throw new Error(`Unsupported network: ${network}`);
+      throw new Error(`Unsupported network: ${network.name}`);
     }
   }
 
-  async getTokenVolume(token: string, network: string) {
+  async getTokenVolume(
+    token: string,
+    network: Network,
+  ): Promise<TokenVolumeResponse> {
     if (!(await this.isWeb3Enabled())) {
       throw new Error('Web3 features are disabled');
     }
 
-    if (
-      network.toLowerCase() === 'evm' ||
-      network.toLowerCase() === 'ethereum'
-    ) {
-      return this.evmService.getTokenVolume(token);
-    } else if (network.toLowerCase() === 'solana') {
-      return this.solanaService.getTokenVolume(token);
+    if (network.type === NetworkType.EVM) {
+      return this.evmService.getTokenVolume(token, network.name as NetworkName);
+    } else if (network.type === NetworkType.SOLANA) {
+      return this.solanaService.getTokenVolume(token, network);
     } else {
-      throw new Error(`Unsupported network: ${network}`);
+      throw new Error(`Unsupported network: ${network.name}`);
     }
   }
 

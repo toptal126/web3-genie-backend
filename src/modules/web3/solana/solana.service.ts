@@ -1,5 +1,14 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import axios from 'axios';
+import {
+  Network,
+  NetworkName,
+  NetworkType,
+} from '../interfaces/web3.interface';
+import {
+  TokenPriceResponse,
+  TokenVolumeResponse,
+} from '../interfaces/web3.interface';
 
 @Injectable()
 export class SolanaService {
@@ -8,29 +17,36 @@ export class SolanaService {
 
   /**
    * Get token price from CoinGecko API
-   * @param tokenId The CoinGecko token ID (e.g., 'solana')
-   * @param currency The currency to convert to (default: 'usd')
+   * @param token The token symbol or address
+   * @param network The network name
    */
-  async getTokenPrice(tokenId: string, currency: string = 'usd'): Promise<any> {
+  async getTokenPrice(
+    token: string,
+    network: NetworkName,
+  ): Promise<TokenPriceResponse> {
     try {
+      if (network !== NetworkName.SOLANA) {
+        throw new Error(`Unsupported network for Solana service: ${network}`);
+      }
+
       const response = await axios.get(`${this.COINGECKO_API}/simple/price`, {
         params: {
-          ids: tokenId,
-          vs_currencies: currency,
+          ids: token,
+          vs_currencies: 'usd',
         },
       });
 
-      if (!response.data[tokenId]) {
+      if (!response.data[token]) {
         throw new HttpException(
-          `Token ${tokenId} not found`,
+          `Token ${token} not found`,
           HttpStatus.NOT_FOUND,
         );
       }
 
       return {
-        tokenId,
-        price: response.data[tokenId][currency],
-        currency,
+        price: response.data[token].usd,
+        currency: 'USD',
+        timestamp: Date.now(),
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -73,18 +89,25 @@ export class SolanaService {
 
   /**
    * Get token trading volume data
-   * @param tokenId The CoinGecko token ID
-   * @param days Number of days of data to retrieve (default: 1)
+   * @param token The token symbol or address
+   * @param network The network name
    */
-  async getTokenVolume(tokenId: string, days: number = 1): Promise<any> {
+  async getTokenVolume(
+    token: string,
+    network: Network,
+  ): Promise<TokenVolumeResponse> {
     try {
+      if (network.type !== NetworkType.SOLANA) {
+        throw new Error(`Unsupported network for Solana service: ${network}`);
+      }
+
       const response = await axios.get(
-        `${this.COINGECKO_API}/coins/${tokenId}/market_chart`,
+        `${this.COINGECKO_API}/coins/${token}/market_chart`,
         {
           params: {
             vs_currency: 'usd',
-            days: days,
-            interval: days <= 1 ? 'hourly' : 'daily',
+            days: 1,
+            interval: 'hourly',
           },
         },
       );
@@ -95,20 +118,13 @@ export class SolanaService {
         volume: item[1],
       }));
 
-      // Calculate total and average volume
-      const totalVolume = volumeData.reduce(
-        (sum, item) => sum + item.volume,
-        0,
-      );
-      const avgVolume = totalVolume / volumeData.length;
+      // Calculate total volume for 24h
+      const volume24h = volumeData.reduce((sum, item) => sum + item.volume, 0);
 
       return {
-        tokenId,
-        days,
-        volumeData,
-        totalVolume,
-        avgVolume,
-        dataPoints: volumeData.length,
+        volume24h,
+        currency: 'USD',
+        timestamp: Date.now(),
       };
     } catch (error) {
       throw new HttpException(
