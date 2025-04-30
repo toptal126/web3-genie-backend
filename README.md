@@ -102,8 +102,17 @@ The application follows the standard NestJS modular architecture:
 For production deployment, build the application and run it with Node.js:
 
 ```bash
+$ pnpm approve-builds
 $ pnpm run build
 $ pnpm run start:prod
+```
+
+When you are facing with sqlite3 issue, run the following commands:
+
+```bash
+$ cd node_modules
+$ cd better-sqlite3
+$ pnpm run build-release
 ```
 
 For detailed deployment options and best practices, refer to the [NestJS deployment documentation](https://docs.nestjs.com/deployment).
