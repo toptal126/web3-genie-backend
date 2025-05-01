@@ -11,11 +11,11 @@ import { NewsModule } from './modules/news/news.module';
 
 @Module({
   imports: [
+    DatabaseModule,
     AuthModule,
     ChatModule,
     Web3Module,
     AdminModule,
-    DatabaseModule,
     UserModule,
     NewsModule,
   ],
