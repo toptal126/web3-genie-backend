@@ -2,18 +2,22 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import axios from 'axios';
 import {
   Network,
-  NetworkName,
   NetworkType,
+  TokenHolderOptions,
+  TokenHoldersResponse,
 } from '../interfaces/web3.interface';
 import {
   TokenPriceResponse,
   TokenVolumeResponse,
 } from '../interfaces/web3.interface';
+import { Network as AlchemyNetwork } from 'alchemy-sdk';
 
 @Injectable()
 export class SolanaService {
   private readonly COINGECKO_API = 'https://api.coingecko.com/api/v3';
-  private readonly SOLANA_RPC_ENDPOINT = 'https://api.mainnet-beta.solana.com';
+  private readonly SOLANA_RPC_URL = process.env.SOLANA_RPC_URL!;
+
+  constructor() {}
 
   /**
    * Get token price from CoinGecko API
@@ -22,10 +26,10 @@ export class SolanaService {
    */
   async getTokenPrice(
     token: string,
-    network: NetworkName,
+    network: AlchemyNetwork,
   ): Promise<TokenPriceResponse> {
     try {
-      if (network !== NetworkName.SOLANA) {
+      if (network !== AlchemyNetwork.SOLANA_MAINNET) {
         throw new Error(`Unsupported network for Solana service: ${network}`);
       }
 
@@ -140,7 +144,7 @@ export class SolanaService {
    */
   async getAccountInfo(address: string): Promise<any> {
     try {
-      const response = await axios.post(this.SOLANA_RPC_ENDPOINT, {
+      const response = await axios.post(this.SOLANA_RPC_URL, {
         jsonrpc: '2.0',
         id: 1,
         method: 'getAccountInfo',
@@ -169,7 +173,7 @@ export class SolanaService {
    */
   async getTransaction(signature: string): Promise<any> {
     try {
-      const response = await axios.post(this.SOLANA_RPC_ENDPOINT, {
+      const response = await axios.post(this.SOLANA_RPC_URL, {
         jsonrpc: '2.0',
         id: 1,
         method: 'getTransaction',
@@ -187,6 +191,97 @@ export class SolanaService {
     } catch (error) {
       throw new HttpException(
         `Failed to fetch transaction: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Get token holders using Solana RPC
+   * @param token The token mint address
+   * @param network The network object
+   * @param options Optional parameters to filter holders
+   */
+  async getTokenHolders(
+    token: string,
+    network: Network,
+    options: TokenHolderOptions = {},
+  ): Promise<TokenHoldersResponse> {
+    try {
+      if (network.type !== NetworkType.SOLANA) {
+        throw new Error(`Unsupported network for Solana service: ${network}`);
+      }
+
+      const { maxHolders = 1000, minAmount = 0 } = options;
+      let page = 1;
+      const allHolders = new Map<string, number>();
+
+      while (true) {
+        const response = await axios.post(this.SOLANA_RPC_URL, {
+          jsonrpc: '2.0',
+          id: 'helius-test',
+          method: 'getTokenAccounts',
+          params: {
+            page,
+            limit: 1000,
+            displayOptions: {},
+            mint: token,
+          },
+        });
+
+        if (response.data.error) {
+          throw new HttpException(
+            `RPC Error: ${response.data.error.message}`,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+
+        const accounts = response.data.result?.token_accounts || [];
+        if (accounts.length === 0) {
+          break;
+        }
+
+        // Process accounts and aggregate balances by owner
+        accounts.forEach((account: any) => {
+          const amount = Number(account.amount);
+          if (amount >= minAmount) {
+            const currentBalance = allHolders.get(account.owner) || 0;
+            allHolders.set(account.owner, currentBalance + amount);
+          }
+        });
+
+        // Check if we've reached the desired number of holders
+        if (allHolders.size >= maxHolders) {
+          break;
+        }
+
+        page++;
+      }
+
+      // Convert to array and sort by balance
+      const holders = Array.from(allHolders.entries())
+        .map(([address, balance]) => ({
+          address,
+          balance,
+          percentage: 0, // Will be calculated after sorting
+        }))
+        .sort((a, b) => b.balance - a.balance)
+        .slice(0, maxHolders);
+
+      // Calculate percentages based on total supply
+      const totalSupply = holders.reduce((sum, h) => sum + h.balance, 0);
+      holders.forEach((holder) => {
+        holder.percentage = (holder.balance / totalSupply) * 100;
+      });
+
+      return {
+        holders,
+        totalHolders: allHolders.size,
+        timestamp: Date.now(),
+      };
+    } catch (error) {
+      throw new HttpException(
+        `Failed to fetch token holders: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

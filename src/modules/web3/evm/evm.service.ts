@@ -1,10 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { NetworkName } from '../interfaces/web3.interface';
+import { TokenHoldersResponse } from '../interfaces/web3.interface';
 import {
   TokenPriceResponse,
   TokenVolumeResponse,
 } from '../interfaces/web3.interface';
 import { AlchemyService } from '../alchemy/alchemy.service';
+import { Network as AlchemyNetwork } from 'alchemy-sdk';
+
+interface TokenHolderOptions {
+  maxHolders?: number;
+  minAmount?: number;
+}
 
 @Injectable()
 export class EvmService {
@@ -12,7 +18,7 @@ export class EvmService {
 
   async getTokenPrice(
     token: string,
-    network: NetworkName,
+    network: AlchemyNetwork,
   ): Promise<TokenPriceResponse> {
     try {
       const price = await this.alchemyService.getTokenPriceByAddress(
@@ -31,9 +37,22 @@ export class EvmService {
 
   async getTokenVolume(
     token: string,
-    network: NetworkName,
+    network: AlchemyNetwork,
   ): Promise<TokenVolumeResponse> {
     // TODO: Implement EVM token volume fetching
     throw new Error('Not implemented');
+  }
+
+  async getTokenHolders(
+    token: string,
+    network: AlchemyNetwork,
+    options: TokenHolderOptions = {},
+  ): Promise<TokenHoldersResponse> {
+    // Return empty response for now
+    return {
+      holders: [],
+      totalHolders: 0,
+      timestamp: Date.now(),
+    };
   }
 }
