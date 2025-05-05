@@ -5,22 +5,26 @@ import {
   NetworkType,
   TokenHolderOptions,
   TokenHoldersResponse,
-} from '../interfaces/web3.interface';
-import {
   TokenPriceResponse,
   TokenVolumeResponse,
 } from '../interfaces/web3.interface';
 import { Network as AlchemyNetwork } from 'alchemy-sdk';
+import { AlchemyApiService } from '../third-party-api/alchemy.api.service';
+import { SolscanApiService } from '../third-party-api/solscan.api.service';
+import { PumpFunApiService } from '../third-party-api/pumpfun.api.service';
 
 @Injectable()
 export class SolanaService {
-  private readonly COINGECKO_API = 'https://api.coingecko.com/api/v3';
   private readonly SOLANA_RPC_URL = process.env.SOLANA_RPC_URL!;
 
-  constructor() {}
+  constructor(
+    private alchemyApiService: AlchemyApiService,
+    private solscanApiService: SolscanApiService,
+    private pumpFunApiService: PumpFunApiService,
+  ) {}
 
   /**
-   * Get token price from CoinGecko API
+   * Get token price with fallback logic
    * @param token The token symbol or address
    * @param network The network name
    */
@@ -33,29 +37,47 @@ export class SolanaService {
         throw new Error(`Unsupported network for Solana service: ${network}`);
       }
 
-      const response = await axios.get(`${this.COINGECKO_API}/simple/price`, {
-        params: {
-          ids: token,
-          vs_currencies: 'usd',
-        },
-      });
-
-      if (!response.data[token]) {
-        throw new HttpException(
-          `Token ${token} not found`,
-          HttpStatus.NOT_FOUND,
-        );
+      // Check if it's a pump.fun token
+      if (token.toLowerCase().endsWith('pump')) {
+        try {
+          const price = await this.pumpFunApiService.getLatestTokenPrice(token);
+          return {
+            price,
+            currency: 'USD',
+            timestamp: Date.now(),
+          };
+        } catch (error) {
+          console.log(`Pump.fun token error: ${error.message}`);
+        }
       }
 
+      // Try Alchemy API first
+      try {
+        const prices = await this.alchemyApiService.getTokenPricesByAddresses([
+          { network, address: token },
+        ]);
+        console.log(prices);
+
+        if (prices[token] && prices[token] > 0) {
+          return {
+            price: prices[token],
+            currency: 'USD',
+            timestamp: Date.now(),
+          };
+        }
+      } catch (error) {
+        console.log('Alchemy API failed, trying Solscan...');
+      }
+
+      // Fallback to Solscan API
+      const price = await this.solscanApiService.getTokenPrice(token);
       return {
-        price: response.data[token].usd,
+        price,
         currency: 'USD',
         timestamp: Date.now(),
       };
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
+      console.log(error);
       throw new HttpException(
         `Failed to fetch token price: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -65,23 +87,19 @@ export class SolanaService {
 
   /**
    * Get Solana token market data
-   * @param tokenId The CoinGecko token ID
+   * @param tokenId The token address
    */
   async getTokenMarketData(tokenId: string): Promise<any> {
     try {
-      const response = await axios.get(
-        `${this.COINGECKO_API}/coins/${tokenId}?localization=false&tickers=false&community_data=false&developer_data=false`,
-      );
+      if (tokenId.toLowerCase().endsWith('pump')) {
+        return this.pumpFunApiService.get24hPriceStats(tokenId);
+      }
 
+      // For non-pump tokens, implement market data fetching from Solscan
+      const price = await this.solscanApiService.getTokenPrice(tokenId);
       return {
-        name: response.data.name,
-        symbol: response.data.symbol,
-        current_price: response.data.market_data.current_price.usd,
-        market_cap: response.data.market_data.market_cap.usd,
-        total_volume: response.data.market_data.total_volume.usd,
-        price_change_percentage_24h:
-          response.data.market_data.price_change_percentage_24h,
-        last_updated: response.data.last_updated,
+        current_price: price,
+        // Add other market data fields as needed
       };
     } catch (error) {
       throw new HttpException(
@@ -105,31 +123,18 @@ export class SolanaService {
         throw new Error(`Unsupported network for Solana service: ${network}`);
       }
 
-      const response = await axios.get(
-        `${this.COINGECKO_API}/coins/${token}/market_chart`,
-        {
-          params: {
-            vs_currency: 'usd',
-            days: 1,
-            interval: 'hourly',
-          },
-        },
-      );
+      if (token.toLowerCase().endsWith('pump')) {
+        const stats = await this.pumpFunApiService.get24hPriceStats(token);
+        return {
+          volume24h: stats.volume24h,
+          currency: 'USD',
+          timestamp: Date.now(),
+        };
+      }
 
-      // Extract volume data from response
-      const volumeData = response.data.total_volumes.map((item) => ({
-        timestamp: item[0],
-        volume: item[1],
-      }));
-
-      // Calculate total volume for 24h
-      const volume24h = volumeData.reduce((sum, item) => sum + item.volume, 0);
-
-      return {
-        volume24h,
-        currency: 'USD',
-        timestamp: Date.now(),
-      };
+      // For non-pump tokens, implement volume fetching from Solscan
+      // TODO: Implement volume fetching from Solscan
+      throw new Error('Volume fetching not implemented for non-pump tokens');
     } catch (error) {
       throw new HttpException(
         `Failed to fetch token volume data: ${error.message}`,

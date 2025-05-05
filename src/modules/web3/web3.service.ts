@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { EvmService } from './evm/evm.service';
 import { SolanaService } from './solana/solana.service';
 import { SystemConfigModel } from '../database/models/system-config.model';
-import { AlchemyService } from './alchemy/alchemy.service';
 import {
   Network,
   TokenPriceResponse,
@@ -11,6 +10,7 @@ import {
   NetworkType,
   TokenHoldersResponse,
   TokenAddress,
+  NETWORKS,
 } from './interfaces/web3.interface';
 import { Network as AlchemyNetwork } from 'alchemy-sdk';
 
@@ -25,7 +25,6 @@ export class Web3Service implements Web3ServiceInterface {
     private evmService: EvmService,
     private solanaService: SolanaService,
     private systemConfigModel: SystemConfigModel,
-    private alchemyService: AlchemyService,
   ) {}
 
   async isWeb3Enabled() {
@@ -40,22 +39,40 @@ export class Web3Service implements Web3ServiceInterface {
       throw new Error('Web3 features are disabled');
     }
 
-    const prices = await this.alchemyService.getTokenPricesByAddresses(
-      addresses.map((addr) => ({
-        network: addr.network,
-        address: addr.address,
-      })),
+    const result: Record<string, TokenPriceResponse> = {};
+
+    // Group addresses by network type
+    const evmAddresses = addresses.filter(
+      (addr) =>
+        NETWORKS.find((n) => n.name === addr.network)?.type === NetworkType.EVM,
+    );
+    const solanaAddresses = addresses.filter(
+      (addr) =>
+        NETWORKS.find((n) => n.name === addr.network)?.type ===
+        NetworkType.SOLANA,
     );
 
-    // Convert the price map to TokenPriceResponse format
-    const result: Record<string, TokenPriceResponse> = {};
-    Object.entries(prices).forEach(([address, price]) => {
-      result[address] = {
-        price,
-        currency: 'USD',
-        timestamp: Date.now(),
-      };
-    });
+    // Get prices from EVM service
+    if (evmAddresses.length > 0) {
+      for (const addr of evmAddresses) {
+        const price = await this.evmService.getTokenPrice(
+          addr.address,
+          addr.network,
+        );
+        result[addr.address] = price;
+      }
+    }
+
+    // Get prices from Solana service
+    if (solanaAddresses.length > 0) {
+      for (const addr of solanaAddresses) {
+        const price = await this.solanaService.getTokenPrice(
+          addr.address,
+          addr.network,
+        );
+        result[addr.address] = price;
+      }
+    }
 
     return result;
   }

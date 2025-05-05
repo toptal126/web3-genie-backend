@@ -4,7 +4,7 @@ import {
   TokenPriceResponse,
   TokenVolumeResponse,
 } from '../interfaces/web3.interface';
-import { AlchemyService } from '../alchemy/alchemy.service';
+import { AlchemyApiService } from '../third-party-api/alchemy.api.service';
 import { Network as AlchemyNetwork } from 'alchemy-sdk';
 
 interface TokenHolderOptions {
@@ -14,14 +14,14 @@ interface TokenHolderOptions {
 
 @Injectable()
 export class EvmService {
-  constructor(private alchemyService: AlchemyService) {}
+  constructor(private AlchemyApiService: AlchemyApiService) {}
 
   async getTokenPrice(
     token: string,
     network: AlchemyNetwork,
   ): Promise<TokenPriceResponse> {
     try {
-      const price = await this.alchemyService.getTokenPriceByAddress(
+      const price = await this.AlchemyApiService.getTokenPriceByAddress(
         token,
         network,
       );
