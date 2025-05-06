@@ -23,15 +23,30 @@ interface PriceStats {
   volume24h: number;
 }
 
+export interface BondingStatus {
+  // Progress-based format
+  progress?: number;
+
+  // Graduation-based format
+  mint?: string;
+  graduatedAt?: string;
+}
+
 @Injectable()
 export class PumpFunApiService {
   private readonly apiClient: AxiosInstance;
   private readonly baseUrl = 'https://frontend-api-v3.pump.fun';
+  private readonly moralisBaseUrl = 'https://solana-gateway.moralis.io';
+  private readonly moralisApiKey: string;
 
   constructor() {
     this.apiClient = axios.create({
       baseURL: this.baseUrl,
     });
+    this.moralisApiKey = process.env.MORALIS_API_KEY || '';
+    if (!this.moralisApiKey) {
+      throw new Error('MORALIS_API_KEY is not configured');
+    }
   }
 
   /**
@@ -151,6 +166,35 @@ export class PumpFunApiService {
       throw new Error(
         `Failed to fetch 5-minute candlesticks: ${error.message}`,
       );
+    }
+  }
+
+  /**
+   * Get token bonding status from Moralis API
+   * @param tokenAddress Token mint address
+   * @returns Promise containing the token's bonding status and progress
+   * @throws Error if the API request fails
+   * @example
+   * const status = await pumpFunApiService.getTokenBondingStatus('H9EW9whFL8syVCf6WvEN6dvMcn2c2Q6stUkMySmgpump');
+   * console.log(status.bondingProgress); // 33.36274797567671
+   */
+  async getTokenBondingStatus(tokenAddress: string): Promise<BondingStatus> {
+    try {
+      const response: BondingStatus = (
+        await axios.get<BondingStatus>(
+          `${this.moralisBaseUrl}/token/mainnet/${tokenAddress}/bonding-status`,
+          {
+            headers: {
+              accept: 'application/json',
+              'X-API-Key': this.moralisApiKey,
+            },
+          },
+        )
+      ).data;
+      if (response.graduatedAt) response.progress = 100;
+      return response;
+    } catch (error) {
+      throw new Error(`Failed to fetch token bonding status: ${error.message}`);
     }
   }
 }

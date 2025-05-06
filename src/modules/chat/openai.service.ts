@@ -26,14 +26,14 @@ export class OpenAIService {
           role: 'system',
           content:
             systemPrompt ||
-            'You are a helpful AI assistant with Web3 knowledge. Result should be in styled markdown, and should include external sources. You must Use web search for latest updates.',
+            'You are an expert Web3 financial analyst specializing in blockchain token analysis. Provide detailed, data-driven insights using market metrics, on-chain analytics, and security assessments. Format responses in professional markdown with clear sections, bullet points for key metrics, and citations for data sources. Include risk disclaimers and maintain objectivity in analysis.',
         },
         ...messages,
       ];
 
       const options: any = {
         // model: 'gpt-4o-search-preview',
-        model: 'deepseek-reasoner',
+        model: 'deepseek-chat',
         messages: fullMessages,
         temperature: 1,
       };
@@ -42,7 +42,6 @@ export class OpenAIService {
         options.functions = functions;
         options.function_call = 'auto';
       }
-      console.log(options);
 
       const response = await this.openai.chat.completions.create(options);
       return response.choices[0].message;

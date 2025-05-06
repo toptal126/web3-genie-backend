@@ -84,3 +84,46 @@ export interface Web3ServiceInterface {
     options?: TokenHolderOptions,
   ): Promise<TokenHoldersResponse>;
 }
+
+/**
+ * Response interface for token information from Solana.fm API
+ */
+export interface SolanaFMTokenInfoResponse {
+  tokenName: string;
+  symbol: string;
+  decimals: number;
+  address: string;
+  verified: string;
+}
+
+export interface SolscanTokenInfoResponse {
+  address: string;
+  name: string;
+  symbol: string;
+  icon: string;
+  decimals: number;
+  holder: number;
+  creator: string;
+  create_tx: string;
+  created_time: number;
+  first_mint_tx: string;
+  first_mint_time: number;
+  metadata: {
+    name: string;
+    symbol: string;
+    description: string;
+    image: string;
+    showName?: boolean;
+    createdOn?: string;
+    twitter?: string;
+    website?: string;
+  };
+  mint_authority: string | null;
+  freeze_authority: string | null;
+  supply: string;
+  price: number;
+  volume_24h?: number;
+  market_cap: number;
+  market_cap_rank?: number;
+  price_change_24h?: number;
+}

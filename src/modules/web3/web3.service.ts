@@ -111,46 +111,4 @@ export class Web3Service implements Web3ServiceInterface {
       throw new Error(`Unsupported network: ${network.name}`);
     }
   }
-
-  // Function definitions for OpenAI function calling
-  getFunctionDefinitions() {
-    return [
-      {
-        name: 'getTokenPrice',
-        description: 'Get the current price of a cryptocurrency token',
-        parameters: {
-          type: 'object',
-          properties: {
-            token: {
-              type: 'string',
-              description: 'The token symbol (e.g., BTC, ETH, SOL)',
-            },
-            network: {
-              type: 'string',
-              description: 'The blockchain network (e.g., evm, solana)',
-            },
-          },
-          required: ['token', 'network'],
-        },
-      },
-      {
-        name: 'getTokenVolume',
-        description: 'Get the 24h trading volume of a cryptocurrency token',
-        parameters: {
-          type: 'object',
-          properties: {
-            token: {
-              type: 'string',
-              description: 'The token symbol (e.g., BTC, ETH, SOL)',
-            },
-            network: {
-              type: 'string',
-              description: 'The blockchain network (e.g., evm, solana)',
-            },
-          },
-          required: ['token', 'network'],
-        },
-      },
-    ];
-  }
 }

@@ -1,6 +1,37 @@
-import { Controller, Post, Body, Get, Param, UseGuards, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  UseGuards,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { ChatService } from './chat.service';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBody,
+  ApiProperty,
+} from '@nestjs/swagger';
+
+import { Network as AlchemyNetwork } from 'alchemy-sdk';
+
+class TokenAnalysisDto {
+  @ApiProperty({ description: 'Token address to analyze' })
+  address: string;
+
+  @ApiProperty({
+    description: 'Alchemy network to use',
+    enum: AlchemyNetwork,
+    default: AlchemyNetwork.SOLANA_MAINNET,
+    required: false,
+  })
+  network?: AlchemyNetwork;
+}
 
 @ApiTags('Chat')
 @Controller('chat')
@@ -24,7 +55,10 @@ export class ChatController {
       },
     },
   })
-  @ApiResponse({ status: 201, description: 'Conversation created successfully' })
+  @ApiResponse({
+    status: 201,
+    description: 'Conversation created successfully',
+  })
   async createConversation(@Body() body: { userId: string; title: string }) {
     return this.chatService.createConversation(body.userId, body.title);
   }
@@ -82,8 +116,21 @@ export class ChatController {
     type: 'string',
     description: 'The ID of the conversation to delete',
   })
-  @ApiResponse({ status: 200, description: 'Conversation deleted successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Conversation deleted successfully',
+  })
   async deleteConversation(@Param('id') id: string) {
     return this.chatService.deleteConversation(id);
+  }
+
+  @Post('analyze-token')
+  @ApiOperation({ summary: 'Analyze token market data and provide insights' })
+  @ApiResponse({
+    status: 200,
+    description: 'Token analysis completed successfully',
+  })
+  async requestTokenAnalysis(@Body() tokenAnalysisDto: TokenAnalysisDto) {
+    return this.chatService.requestTokenAnalysis(tokenAnalysisDto);
   }
 }

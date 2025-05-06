@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
+import { SolscanTokenInfoResponse } from '../interfaces/web3.interface';
 
 interface SolscanPriceResponse {
   success: boolean;
@@ -90,6 +91,24 @@ export class SolscanApiService {
         );
       }
       throw error;
+    }
+  }
+
+  async getTokenInfo(
+    address: string,
+  ): Promise<SolscanTokenInfoResponse | null> {
+    try {
+      const response = await this.apiClient.get(`/token/meta`, {
+        params: {
+          address,
+        },
+      });
+      return response.data.data;
+    } catch (error) {
+      console.error(
+        `Failed to fetch token info using solscan: ${error.response?.data?.message || error.message}`,
+      );
+      return null;
     }
   }
 }
