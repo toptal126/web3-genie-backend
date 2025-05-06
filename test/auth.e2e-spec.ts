@@ -1,6 +1,6 @@
 import { PublicKey, Keypair } from '@solana/web3.js';
 import * as nacl from 'tweetnacl';
-import * as request from 'supertest';
+import request from 'supertest';
 
 describe('Wallet Authentication (e2e)', () => {
   let testWallet: Keypair;
@@ -36,7 +36,7 @@ describe('Wallet Authentication (e2e)', () => {
       .expect((res) => {
         expect(res.body.success).toBe(true);
         expect(res.body.user).toBeDefined();
-        expect(res.body.user.walletAddress).toBe(
+        expect(res.body.user.wallet_address).toBe(
           testWallet.publicKey.toString(),
         );
       });

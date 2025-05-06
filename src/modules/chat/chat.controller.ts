@@ -7,6 +7,7 @@ import {
   UseGuards,
   Delete,
   Query,
+  Headers,
 } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import {
@@ -17,7 +18,7 @@ import {
   ApiBody,
   ApiProperty,
 } from '@nestjs/swagger';
-
+import { WalletAuthGuard } from '../auth/guards/wallet-auth.guard';
 import { Network as AlchemyNetwork } from 'alchemy-sdk';
 
 class TokenAnalysisDto {
@@ -35,6 +36,7 @@ class TokenAnalysisDto {
 
 @ApiTags('Chat')
 @Controller('chat')
+@UseGuards(WalletAuthGuard)
 export class ChatController {
   constructor(private chatService: ChatService) {}
 
@@ -44,10 +46,6 @@ export class ChatController {
     schema: {
       type: 'object',
       properties: {
-        userId: {
-          type: 'string',
-          description: 'The ID of the user creating the conversation',
-        },
         title: {
           type: 'string',
           description: 'The title of the conversation',
@@ -59,20 +57,29 @@ export class ChatController {
     status: 201,
     description: 'Conversation created successfully',
   })
-  async createConversation(@Body() body: { userId: string; title: string }) {
-    return this.chatService.createConversation(body.userId, body.title);
+  async createConversation(
+    @Headers('x-wallet-address') walletAddress: string,
+    @Body() body: { title: string },
+  ) {
+    return this.chatService.createConversation(walletAddress, body.title);
   }
 
-  @Get('conversations/:userId')
-  @ApiOperation({ summary: 'Get all conversations for a user' })
-  @ApiParam({
-    name: 'userId',
-    type: 'string',
-    description: 'The ID of the user',
+  @Get('conversation')
+  @ApiOperation({
+    summary: 'Get the latest conversation for the authenticated user',
   })
+  @ApiResponse({ status: 200, description: 'Returns the latest conversation' })
+  async getLatestConversation(
+    @Headers('x-wallet-address') walletAddress: string,
+  ) {
+    return this.chatService.getLatestConversation(walletAddress);
+  }
+
+  @Get('conversations')
+  @ApiOperation({ summary: 'Get all conversations for the authenticated user' })
   @ApiResponse({ status: 200, description: 'Returns list of conversations' })
-  async getConversations(@Param('userId') userId: string) {
-    return this.chatService.getConversations(userId);
+  async getConversations(@Headers('x-wallet-address') walletAddress: string) {
+    return this.chatService.getConversations(walletAddress);
   }
 
   @Get('conversation/:id')
@@ -83,8 +90,11 @@ export class ChatController {
     description: 'The ID of the conversation',
   })
   @ApiResponse({ status: 200, description: 'Returns the conversation details' })
-  async getConversation(@Param('id') id: string) {
-    return this.chatService.getConversation(id);
+  async getConversation(
+    @Headers('x-wallet-address') walletAddress: string,
+    @Param('id') id: string,
+  ) {
+    return this.chatService.getConversation(id, walletAddress);
   }
 
   @Post('message')
@@ -105,8 +115,15 @@ export class ChatController {
     },
   })
   @ApiResponse({ status: 201, description: 'Message sent successfully' })
-  async sendMessage(@Body() body: { conversationId: string; content: string }) {
-    return this.chatService.sendMessage(body.conversationId, body.content);
+  async sendMessage(
+    @Headers('x-wallet-address') walletAddress: string,
+    @Body() body: { conversationId: string; content: string },
+  ) {
+    return this.chatService.sendMessage(
+      body.conversationId,
+      body.content,
+      walletAddress,
+    );
   }
 
   @Delete('conversation/:id')
@@ -120,8 +137,11 @@ export class ChatController {
     status: 200,
     description: 'Conversation deleted successfully',
   })
-  async deleteConversation(@Param('id') id: string) {
-    return this.chatService.deleteConversation(id);
+  async deleteConversation(
+    @Headers('x-wallet-address') walletAddress: string,
+    @Param('id') id: string,
+  ) {
+    return this.chatService.deleteConversation(id, walletAddress);
   }
 
   @Post('analyze-token')
@@ -130,7 +150,13 @@ export class ChatController {
     status: 200,
     description: 'Token analysis completed successfully',
   })
-  async requestTokenAnalysis(@Body() tokenAnalysisDto: TokenAnalysisDto) {
-    return this.chatService.requestTokenAnalysis(tokenAnalysisDto);
+  async requestTokenAnalysis(
+    @Headers('x-wallet-address') walletAddress: string,
+    @Body() tokenAnalysisDto: TokenAnalysisDto,
+  ) {
+    return this.chatService.requestTokenAnalysis(
+      tokenAnalysisDto,
+      walletAddress,
+    );
   }
 }

@@ -2,8 +2,9 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
-import { AuthController } from './controllers/auth.controller';
-import { AuthService } from './services/auth.service';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+import { UserModule } from '../user/user.module';
 import {
   WalletSession,
   WalletSessionSchema,
@@ -21,6 +22,7 @@ import {
       },
     ]),
     ScheduleModule.forRoot(),
+    UserModule,
   ],
   controllers: [AuthController],
   providers: [AuthService],

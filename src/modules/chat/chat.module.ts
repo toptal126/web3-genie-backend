@@ -13,6 +13,7 @@ import {
 import { Message, MessageSchema } from '../database/schemas/message.schema';
 import { SystemConfigModule } from '../database/system-config.module';
 import { Web3Module } from '../web3/web3.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { Web3Module } from '../web3/web3.module';
     ]),
     SystemConfigModule,
     Web3Module,
+    UserModule,
   ],
   controllers: [ChatController],
   providers: [

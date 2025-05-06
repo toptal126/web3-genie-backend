@@ -50,7 +50,7 @@ POST /auth/verify
   success: boolean;
   user: {
     id: string;
-    walletAddress: string;
+    wallet_address: string;
     createdAt: string;
     updatedAt: string;
   }

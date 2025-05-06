@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { OpenAIService } from './openai.service';
 import { ConversationModel } from './models/conversation.model';
 import { MessageModel } from './models/message.model';
@@ -16,11 +20,12 @@ import { PumpFunApiService } from '../web3/third-party-api/pumpfun.api.service';
 import { SolscanApiService } from '@modules/web3/third-party-api/solscan.api.service';
 import { Types } from 'mongoose';
 import * as solanaArticles from './templates/articles/solana-articles.json';
+import { UserService } from '../user/user.service';
 
 interface TokenAnalysisDto {
   address: string;
   network?: AlchemyNetwork;
-  conversationId?: string; // Optional conversation ID to continue existing chat
+  conversationId?: string;
 }
 
 @Injectable()
@@ -29,27 +34,30 @@ export class ChatService {
     private conversationModel: ConversationModel,
     private messageModel: MessageModel,
     private openaiService: OpenAIService,
-    private readonly web3Service: Web3Service,
     private readonly moralisApiService: MoralisApiService,
     private readonly heliusApiService: HeliusApiService,
     private readonly solanaFMApiService: SolanaFMApiService,
     private readonly pumpFunApiService: PumpFunApiService,
     private readonly solscanApiService: SolscanApiService,
+    private readonly userService: UserService,
   ) {}
 
   async createConversation(
-    userId: string,
+    walletAddress: string,
     title: string,
   ): Promise<Conversation> {
-    return this.conversationModel.create(userId, title);
+    const user = await this.userService.getUserByWalletAddress(walletAddress);
+    return this.conversationModel.create(user.id, title);
   }
 
-  async getConversations(userId: string): Promise<Conversation[]> {
-    return this.conversationModel.findByUserId(userId);
+  async getConversations(walletAddress: string): Promise<Conversation[]> {
+    const user = await this.userService.getUserByWalletAddress(walletAddress);
+    return this.conversationModel.findByUserId(user.id);
   }
 
   async getConversation(
     conversationId: string,
+    walletAddress: string,
   ): Promise<{ conversation: Conversation; messages: Message[] }> {
     const conversation = await this.conversationModel.findById(conversationId);
     if (!conversation) {
@@ -58,17 +66,58 @@ export class ChatService {
       );
     }
 
+    const user = await this.userService.getUserByWalletAddress(walletAddress);
+    if (conversation.user_id.toString() !== user.id) {
+      throw new UnauthorizedException(
+        'You do not have access to this conversation',
+      );
+    }
+
     const messages =
       await this.messageModel.findByConversationId(conversationId);
     return { conversation, messages };
   }
 
-  async sendMessage(conversationId: string, content: string): Promise<Message> {
-    // Check if conversation exists
+  async getLatestConversation(
+    walletAddress: string,
+  ): Promise<{ conversation: Conversation; messages: Message[] }> {
+    const conversations =
+      await this.conversationModel.findByUserId(walletAddress);
+    if (!conversations.length) {
+      throw new NotFoundException(
+        `No conversations found for user ${walletAddress}`,
+      );
+    }
+
+    const user = await this.userService.getUserByWalletAddress(walletAddress);
+    if (conversations[0].user_id.toString() !== user.id) {
+      throw new UnauthorizedException(
+        'You do not have access to this conversation',
+      );
+    }
+
+    const messages = await this.messageModel.findByConversationId(
+      conversations[0].id,
+    );
+    return { conversation: conversations[0], messages };
+  }
+
+  async sendMessage(
+    conversationId: string,
+    content: string,
+    walletAddress: string,
+  ): Promise<Message> {
     const conversation = await this.conversationModel.findById(conversationId);
     if (!conversation) {
       throw new NotFoundException(
         `Conversation with ID ${conversationId} not found`,
+      );
+    }
+
+    const user = await this.userService.getUserByWalletAddress(walletAddress);
+    if (conversation.user_id.toString() !== user.id) {
+      throw new UnauthorizedException(
+        'You do not have access to this conversation',
       );
     }
 
@@ -95,7 +144,22 @@ export class ChatService {
 
   async deleteConversation(
     conversationId: string,
+    walletAddress: string,
   ): Promise<{ success: boolean; message: string }> {
+    const conversation = await this.conversationModel.findById(conversationId);
+    if (!conversation) {
+      throw new NotFoundException(
+        `Conversation with ID ${conversationId} not found`,
+      );
+    }
+
+    const user = await this.userService.getUserByWalletAddress(walletAddress);
+    if (conversation.user_id.toString() !== user.id) {
+      throw new UnauthorizedException(
+        'You do not have access to this conversation',
+      );
+    }
+
     const deleted = await this.conversationModel.delete(conversationId);
     return {
       success: deleted,
@@ -111,7 +175,10 @@ export class ChatService {
    * @returns Analysis results and insights
    * @throws Error if the token is not on Solana network
    */
-  async requestTokenAnalysis(tokenAnalysisDto: TokenAnalysisDto) {
+  async requestTokenAnalysis(
+    tokenAnalysisDto: TokenAnalysisDto,
+    walletAddress: string,
+  ) {
     const { address, network, conversationId } = tokenAnalysisDto;
 
     // Check if network is supported
