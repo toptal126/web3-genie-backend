@@ -31,10 +31,9 @@ function getTokenMetadata(
   }
 
   const social = {
-    twitter: solscanInfo?.metadata.twitter,
-    website: solscanInfo?.metadata.website,
+    twitter: solscanInfo?.metadata?.twitter,
+    website: solscanInfo?.metadata?.website,
   };
-
   // Only include social if at least one link exists
   const socialLinks = social.twitter || social.website ? { social } : undefined;
 
@@ -44,7 +43,7 @@ function getTokenMetadata(
     decimals: solscanInfo?.decimals || solanaFmInfo?.decimals || 0,
     totalSupply: solscanInfo?.supply || '0',
     creator: solscanInfo?.creator,
-    description: solscanInfo?.metadata.description,
+    description: solscanInfo?.metadata?.description,
     logo: solscanInfo?.icon,
     tags: [], // TODO: Add tags if available
     verified:

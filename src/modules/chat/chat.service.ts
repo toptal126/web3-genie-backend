@@ -276,6 +276,13 @@ export class ChatService {
       // Create and save the response message
       const newConversationId =
         conversationId ?? new Types.ObjectId().toString();
+
+      // add new message in user style requesting token analysis
+      this.messageModel.create(
+        conversationId,
+        'user',
+        `Analyze the token ${address} on the ${network} network`,
+      );
       const responseMessage = await this.messageModel.create(
         newConversationId,
         'assistant',
