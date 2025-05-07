@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -78,18 +79,21 @@ export class ChatService {
     return { conversation, messages };
   }
 
-  async getLatestConversation(
+  async getOrCreateLatestConversation(
     walletAddress: string,
   ): Promise<{ conversation: Conversation; messages: Message[] }> {
-    const conversations =
-      await this.conversationModel.findByUserId(walletAddress);
+    const user = await this.userService.getUserByWalletAddress(walletAddress);
+    const conversations = await this.conversationModel.findByUserId(user.id);
     if (!conversations.length) {
-      throw new NotFoundException(
-        `No conversations found for user ${walletAddress}`,
-      );
+      return {
+        conversation: await this.createConversation(
+          walletAddress,
+          'New Conversation',
+        ),
+        messages: [],
+      };
     }
 
-    const user = await this.userService.getUserByWalletAddress(walletAddress);
     if (conversations[0].user_id.toString() !== user.id) {
       throw new UnauthorizedException(
         'You do not have access to this conversation',
@@ -181,10 +185,25 @@ export class ChatService {
   ) {
     const { address, network, conversationId } = tokenAnalysisDto;
 
+    if (!conversationId) {
+      throw new BadRequestException('Conversation ID is required');
+    }
+
+    if (!walletAddress) {
+      throw new BadRequestException('Wallet address is required');
+    }
+
     // Check if network is supported
     if (network !== AlchemyNetwork.SOLANA_MAINNET) {
       throw new Error('Only Solana mainnet is supported for token analysis');
     }
+
+    // add new message in user style requesting token analysis
+    this.messageModel.create(
+      conversationId,
+      'user',
+      `Please analyze the token ${address} on the ${network} network`,
+    );
 
     try {
       // Fetch token data from various sources

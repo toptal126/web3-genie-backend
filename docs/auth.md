@@ -6,7 +6,7 @@ The authentication module handles wallet-based authentication using Solana walle
 
 ## Flow
 
-1. Get nonce from server
+1. Get nonce from server (requires wallet address)
 2. Sign nonce with wallet
 3. Verify signature with server
 4. Receive user session
@@ -19,6 +19,14 @@ The authentication module handles wallet-based authentication using Solana walle
 GET /auth/nonce
 ```
 
+**Headers Required**
+
+```typescript
+{
+  'x-wallet-address': string;  // User's wallet address
+}
+```
+
 **Response**
 
 ```typescript
@@ -26,6 +34,12 @@ GET /auth/nonce
   nonce: string; // 32-byte hex string
 }
 ```
+
+**Notes**
+
+- If a valid nonce already exists for the wallet address, it will be returned instead of generating a new one
+- Nonces expire after 5 minutes
+- Rate limited to 5 requests per minute per wallet address
 
 ### Verify Wallet
 
@@ -61,13 +75,18 @@ POST /auth/verify
 
 - `401`: Missing or invalid headers
 - `401`: Invalid signature
+- `400`: Invalid wallet address format
 - `500`: Server error
 
 ## Example Usage
 
 ```typescript
 // 1. Get nonce
-const nonceResponse = await fetch('http://localhost:3035/auth/nonce');
+const nonceResponse = await fetch('http://localhost:3035/auth/nonce', {
+  headers: {
+    'x-wallet-address': wallet.publicKey.toString(),
+  },
+});
 const { nonce } = await nonceResponse.json();
 
 // 2. Sign nonce with wallet

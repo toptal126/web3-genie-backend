@@ -9,6 +9,7 @@ import {
   WalletSession,
   WalletSessionSchema,
 } from './entities/wallet-session.entity';
+import { SolanaModule } from '../web3/solana/solana.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import {
     ]),
     ScheduleModule.forRoot(),
     UserModule,
+    SolanaModule,
   ],
   controllers: [AuthController],
   providers: [AuthService],

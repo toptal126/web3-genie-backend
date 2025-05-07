@@ -12,6 +12,7 @@ import { Network as AlchemyNetwork } from 'alchemy-sdk';
 import { AlchemyApiService } from '../third-party-api/alchemy.api.service';
 import { SolscanApiService } from '../third-party-api/solscan.api.service';
 import { PumpFunApiService } from '../third-party-api/pumpfun.api.service';
+import { PublicKey } from '@solana/web3.js';
 
 @Injectable()
 export class SolanaService {
@@ -289,6 +290,15 @@ export class SolanaService {
         `Failed to fetch token holders: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+  }
+
+  public checkValidSolanaAddress(address: string): boolean {
+    try {
+      const _ = new PublicKey(address);
+      return true;
+    } catch (error) {
+      return false;
     }
   }
 }

@@ -72,7 +72,7 @@ export class ChatController {
   async getLatestConversation(
     @Headers('x-wallet-address') walletAddress: string,
   ) {
-    return this.chatService.getLatestConversation(walletAddress);
+    return this.chatService.getOrCreateLatestConversation(walletAddress);
   }
 
   @Get('conversations')

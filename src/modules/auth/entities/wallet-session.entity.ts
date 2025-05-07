@@ -3,10 +3,10 @@ import { Document } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class WalletSession extends Document {
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true, unique: true, index: true })
   nonce: string;
 
-  @Prop()
+  @Prop({ required: true, unique: true, index: true })
   wallet_address: string;
 
   @Prop({ required: true })

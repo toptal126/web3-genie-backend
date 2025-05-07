@@ -18,13 +18,24 @@ export class AuthService {
     private walletSessionModel: Model<WalletSession>,
   ) {}
 
-  async generateNonce(): Promise<string> {
+  async findSessionByWalletAddress(
+    walletAddress: string,
+  ): Promise<WalletSession | null> {
+    return this.walletSessionModel.findOne({
+      wallet_address: walletAddress,
+      is_used: false,
+      expires_at: { $gt: new Date() },
+    });
+  }
+
+  async generateNonce(walletAddress: string): Promise<string> {
     const nonce = uuidv4();
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 5);
 
     await this.walletSessionModel.create({
       nonce,
+      wallet_address: walletAddress,
       expires_at: expiresAt,
     });
 

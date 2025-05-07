@@ -12,7 +12,6 @@ import {
   TokenAddress,
   NETWORKS,
 } from './interfaces/web3.interface';
-import { Network as AlchemyNetwork } from 'alchemy-sdk';
 
 interface TokenHolderOptions {
   maxHolders?: number;
