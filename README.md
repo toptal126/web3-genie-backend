@@ -1,23 +1,31 @@
-# Web3 Genie Backend 🚀
+# Forge AI Backend API 🚀
 
-A powerful, scalable backend service for Web3 applications, built with NestJS and MongoDB. This service provides robust APIs for blockchain interactions, AI-powered chat, and comprehensive Web3 data management.
+The backend API service for Forge AI, a powerful Web3 AI platform. This service provides robust APIs for blockchain interactions, AI-powered chat, and comprehensive Web3 data management.
+
+## 🔗 Links
+
+- [Frontend Application](https://forge.ai)
+- [Technical Documentation](docs/readme.md)
 
 ## ✨ Features
 
 - 🤖 **AI-Powered Chat System**
+
   - Intelligent conversation management
   - Context-aware responses
   - Web3-specific knowledge base
+  - Real-time chat processing
 
 - 🔗 **Blockchain Integration**
-  - Multi-chain support (EVM, Solana)
+
+  - Multi-chain support (Solana, EVM - coming soon)
   - Real-time token price tracking
   - Volume analytics
   - Transaction monitoring
 
 - 🛡️ **Security First**
-  - JWT authentication
-  - Role-based access control
+
+  - Wallet signature authentication
   - Secure API endpoints
   - Environment-based configuration
 
@@ -31,13 +39,13 @@ A powerful, scalable backend service for Web3 applications, built with NestJS an
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Set up environment variables
 cp .env.example .env
 
 # Start development server
-npm run start:dev
+pnpm run start:dev
 ```
 
 ## 🔧 Configuration
@@ -45,21 +53,26 @@ npm run start:dev
 Create a `.env` file with the following variables:
 
 ```env
-MONGODB_URI=your_mongodb_uri
-BRAVE_API_TOKEN=brave_api_key
-OPENAI_API_KEY=your_openai_api_key
+ALLOWED_ORIGINS
+OPENAI_API_KEY
+PORT
+MONGODB_URI
+ALCHEMY_API_KEY
+HELIUS_SOLANA_RPC_URL
+SOLANA_RPC_URL
+SOLSCAN_API_KEY
+MORALIS_API_KEY
 ```
 
 ## 📚 API Documentation
 
-Once the server is running, visit `http://localhost:3000/api` for the complete API documentation.
+Once the server is running, visit `http://localhost:3035` for the complete API documentation.
 
 ## 🛠️ Tech Stack
 
 - **Framework:** NestJS
 - **Database:** MongoDB
-- **Authentication:** JWT
-- **AI Integration:** OpenAI
+- **AI Integration:** OpenAI, DeepSeek
 - **Blockchain:** Web3.js, Solana Web3
 - **Documentation:** Swagger/OpenAPI
 
@@ -73,8 +86,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🌟 Support
 
-For support, email support@web3genie.com or join our [Discord community](https://discord.gg/web3genie).
+For support, email cryptokuinka@gmail.com or follow my [X](https://x.com/web3_pop).
 
 ---
 
-Built with ❤️ by the Web3 Genie Team
+Built with ❤️ by the Forge AI Team

@@ -7,11 +7,7 @@ This documentation provides detailed information about the Web3 Genie backend AP
 ## Table of Contents
 
 - [Authentication](./auth.md)
-- [User Management](./user.md)
-- [Web3 Integration](./web3.md)
 - [Chat System](./chat.md)
-- [News Module](./news.md)
-- [Admin Panel](./admin.md)
 
 ## Getting Started
 
