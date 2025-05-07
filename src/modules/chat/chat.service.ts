@@ -134,7 +134,7 @@ export class ChatService {
 
     // Generate AI response
     const aiResponse =
-      await this.openaiService.generateChatCompletion(messages);
+      await this.openaiService.generateGeneralChatCompletion(messages);
 
     // Store AI response
     const aiMessage = await this.messageModel.create(
@@ -264,7 +264,7 @@ export class ChatService {
       ];
 
       const response =
-        await this.openaiService.generateChatCompletion(messages);
+        await this.openaiService.generateTokenAnalystChatCompletion(messages);
 
       // Create and save the response message
       const newConversationId =
