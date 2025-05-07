@@ -33,13 +33,29 @@ export class AuthService {
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 5);
 
-    await this.walletSessionModel.create({
-      nonce,
+    // First, try to find an existing session
+    const existingSession = await this.walletSessionModel.findOne({
       wallet_address: walletAddress,
-      expires_at: expiresAt,
     });
 
-    return nonce;
+    if (existingSession) {
+      // Update the existing session
+      existingSession.nonce = nonce;
+      existingSession.expires_at = expiresAt;
+      existingSession.is_used = false;
+      await existingSession.save();
+      return nonce;
+    }
+
+    // If no existing session, create a new one
+    const newSession = await this.walletSessionModel.create({
+      wallet_address: walletAddress,
+      nonce,
+      expires_at: expiresAt,
+      is_used: false,
+    });
+
+    return newSession.nonce;
   }
 
   async verifySignature(

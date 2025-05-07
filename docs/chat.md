@@ -170,7 +170,7 @@ POST /chat/analyze-token
 {
   address: string;                    // Token address to analyze
   network?: 'SOLANA_MAINNET';         // Optional network (defaults to Solana mainnet)
-  conversationId?: string;            // Optional conversation ID to continue existing chat
+  conversationId: string;             // Required conversation ID to continue existing chat
 }
 ```
 
