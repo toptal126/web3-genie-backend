@@ -198,13 +198,6 @@ export class ChatService {
       throw new Error('Only Solana mainnet is supported for token analysis');
     }
 
-    // add new message in user style requesting token analysis
-    this.messageModel.create(
-      conversationId,
-      'user',
-      `Please analyze the token ${address} on the ${network} network`,
-    );
-
     try {
       // Fetch token data from various sources
       const [
