@@ -233,7 +233,7 @@ export const generateTokenAnalysisPrompt = (
     You are a Solana SPL token analysis expert. Analyze the following token data and provide:
     - Clear technical assessment
     - Liquidity and market analysis
-    - Holder concentration insights
+    - Holder concentration insights (consider that single contract or CEX cold wallets can hold most of token supply like bridge)
     - Security evaluation
     - Trading/investment considerations
     ${newsContext || '- Market context from recent news'}

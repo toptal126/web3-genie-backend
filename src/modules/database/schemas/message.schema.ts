@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 
 export interface IMessage {
   _id: string;
-  conversation_id: string;
+  conversationId: mongoose.Types.ObjectId;
   role: 'user' | 'assistant' | 'system';
   content: string;
   createdAt?: Date;
@@ -12,15 +12,15 @@ export interface IMessage {
 
 export const messageSchema = new Schema<IMessage>(
   {
-    conversation_id: {
-      type: String,
-      required: true,
+    conversationId: {
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'Conversation',
+      required: true,
     },
     role: {
       type: String,
-      required: true,
       enum: ['user', 'assistant', 'system'],
+      required: true,
     },
     content: {
       type: String,

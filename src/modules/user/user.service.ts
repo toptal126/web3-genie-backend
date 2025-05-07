@@ -11,7 +11,8 @@ export class UserService {
       return await this.userModel.create(walletAddress);
     } catch (error) {
       // Check if user already exists
-      if (error.code === 11000) { // MongoDB duplicate key error
+      if (error.code === 11000) {
+        // MongoDB duplicate key error
         const existingUser = await this.getUserByWalletAddress(walletAddress);
         return existingUser;
       }
@@ -30,7 +31,8 @@ export class UserService {
   async getUserByWalletAddress(walletAddress: string): Promise<User> {
     const user = await this.userModel.findByWalletAddress(walletAddress);
     if (!user) {
-      throw new NotFoundException(`User with wallet address ${walletAddress} not found`);
+      // create a new user
+      return await this.createUser(walletAddress);
     }
     return user;
   }

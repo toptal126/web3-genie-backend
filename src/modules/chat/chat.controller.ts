@@ -21,6 +21,7 @@ import {
 import { WalletAuthGuard } from '../auth/guards/wallet-auth.guard';
 import { Network as AlchemyNetwork } from 'alchemy-sdk';
 import { ConversationResponseDto } from './dto/conversation.dto';
+import { PublicKey } from '@solana/web3.js';
 
 class TokenAnalysisDto {
   @ApiProperty({ description: 'Token address to analyze' })
@@ -124,10 +125,23 @@ export class ChatController {
     @Headers('x-wallet-address') walletAddress: string,
     @Body() body: { conversationId: string; content: string },
   ) {
+    // Parse potential Solana addresses from the message
+    const potentialAddresses =
+      body.content.match(/[1-9A-HJ-NP-Za-km-z]{32,44}/g) || [];
+    const validAddresses = potentialAddresses.filter((address) => {
+      try {
+        new PublicKey(address);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    });
+
     return this.chatService.sendMessage(
       body.conversationId,
       body.content,
       walletAddress,
+      validAddresses,
     );
   }
 

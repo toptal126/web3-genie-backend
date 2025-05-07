@@ -49,9 +49,9 @@ export class ChatService {
     walletAddress: string,
     title: string,
   ): Promise<ConversationResponseDto> {
+    const user = await this.userService.getUserByWalletAddress(walletAddress);
     const conversation =
       await this.getOrCreateLatestConversation(walletAddress);
-    const user = await this.userService.getUserByWalletAddress(walletAddress);
     if (conversation.messages.length === 0) {
       // update the title of the conversation
       const conversationId = (conversation.conversation as any)._id.toString();
@@ -117,7 +117,7 @@ export class ChatService {
     }
 
     const messages = await this.messageModel
-      .find({ conversation_id: conversationId })
+      .find({ conversationId })
       .sort({ createdAt: 1 })
       .exec();
 
@@ -142,7 +142,7 @@ export class ChatService {
       }
 
       const messages = await this.messageModel
-        .find({ conversation_id: latestConversation._id })
+        .find({ conversationId: latestConversation._id })
         .sort({ createdAt: 1 })
         .exec();
       return { conversation: latestConversation, messages };
@@ -163,43 +163,104 @@ export class ChatService {
     conversationId: string,
     content: string,
     walletAddress: string,
+    tokenAddresses: string[] = [],
   ): Promise<IMessage> {
     const conversation = await this.conversationModel.findById(conversationId);
     if (!conversation) {
-      throw new NotFoundException(
-        `Conversation with ID ${conversationId} not found`,
-      );
+      throw new NotFoundException('Conversation not found');
     }
 
     const user = await this.userService.getUserByWalletAddress(walletAddress);
     if (conversation.user_id.toString() !== user.id) {
       throw new UnauthorizedException(
-        'You do not have access to this conversation',
+        'Not authorized to access this conversation',
       );
     }
 
-    // Store user message
+    // Create user message
     await this.messageModel.create({
-      conversation_id: conversationId,
-      role: 'user',
+      conversationId,
       content,
+      role: 'user',
+      walletAddress,
     });
 
     // Get conversation history
     const messages = await this.messageModel
-      .find({ conversation_id: conversationId })
+      .find({ conversationId })
       .sort({ createdAt: 1 })
-      .exec();
+      .lean();
+
+    let systemPrompt =
+      'You are a helpful assistant that can answer questions and help with tasks related to web3, crypto, and blockchain. Keep answers brief and to the point.';
+
+    // If token addresses are found, analyze only the first one
+    if (tokenAddresses.length > 0) {
+      const address = tokenAddresses[0];
+
+      // Check if we already have analysis data for this token
+      const existingAnalysis = conversation.tokenAnalysisData?.find(
+        (data) => data.address === address,
+      );
+
+      let tokenData;
+      if (existingAnalysis) {
+        tokenData = existingAnalysis.data;
+      } else {
+        // Get token analysis data
+        try {
+          tokenData = await this.requestTokenAnalysis(
+            { address, conversationId, network: AlchemyNetwork.SOLANA_MAINNET },
+            walletAddress,
+          );
+        } catch (error) {
+          // return error message
+          //create new assistant message and store it
+          const assistantMessage = await this.messageModel.create({
+            _id: new Types.ObjectId(),
+            conversationId: new Types.ObjectId(conversationId),
+            content:
+              'Invalid request, Check your contract address or try again later',
+            role: 'assistant',
+          });
+          return assistantMessage;
+        }
+
+        // Store the analysis data in the conversation
+        await this.conversationModel.findByIdAndUpdate(conversationId, {
+          $push: {
+            tokenAnalysisData: {
+              address,
+              data: tokenData,
+              timestamp: new Date(),
+            },
+          },
+        });
+      }
+
+      // Add token analysis to system prompt
+      systemPrompt = `You are an expert Web3 financial analyst specializing in blockchain token analysis. Provide detailed, data-driven insights using market metrics, on-chain analytics, and security assessments. Format responses in professional markdown with clear sections, bullet points for key metrics, and citations for data sources. Include risk disclaimers and maintain objectivity in analysis.
+
+Token Analysis Data:
+Token Address: ${address}
+${JSON.stringify(tokenData, null, 2)}`;
+    }
 
     // Generate AI response
-    const aiResponse =
-      await this.openaiService.generateGeneralChatCompletion(messages);
+    const aiResponse = await this.openaiService.generateChatCompletion(
+      messages.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      })),
+      systemPrompt,
+    );
 
-    // Store AI response
+    // Create AI message
     const aiMessage = await this.messageModel.create({
-      conversation_id: conversationId,
+      conversationId: new Types.ObjectId(conversationId),
+      content: aiResponse.content,
       role: 'assistant',
-      content: aiResponse.content || 'No response generated',
+      walletAddress,
     });
 
     return aiMessage;
@@ -226,9 +287,7 @@ export class ChatService {
     const session = await this.conversationModel.startSession();
     try {
       await session.withTransaction(async () => {
-        await this.messageModel
-          .deleteMany({ conversation_id: conversationId })
-          .session(session);
+        await this.messageModel.deleteMany({ conversationId }).session(session);
         await this.conversationModel
           .findByIdAndDelete(conversationId)
           .session(session);
@@ -304,10 +363,7 @@ export class ChatService {
       };
 
       if (!solanaFmTokenInfo && !solscanTokenInfo) {
-        return {
-          success: false,
-          message: 'Token info is required for analysis',
-        };
+        throw new Error('Invalid token address');
       }
 
       const tokenData = transformTokenData(rawData);
@@ -316,7 +372,7 @@ export class ChatService {
       let chatHistory: IMessage[] = [];
       if (conversationId) {
         chatHistory = await this.messageModel
-          .find({ conversation_id: conversationId })
+          .find({ conversationId: new Types.ObjectId(conversationId) })
           .sort({ createdAt: 1 })
           .exec();
       }
@@ -347,15 +403,18 @@ export class ChatService {
         conversationId ?? new Types.ObjectId().toString();
 
       // add new message in user style requesting token analysis
-      this.messageModel.create({
-        conversation_id: conversationId,
+      await this.messageModel.create({
+        conversationId: new Types.ObjectId(conversationId),
         role: 'user',
         content: `Analyze the token ${address} on the ${network} network`,
+        walletAddress,
       });
+
       const responseMessage = await this.messageModel.create({
-        conversation_id: newConversationId,
+        conversationId: new Types.ObjectId(newConversationId),
         role: 'assistant',
         content: response.content ?? 'No response generated',
+        walletAddress,
       });
 
       return responseMessage;

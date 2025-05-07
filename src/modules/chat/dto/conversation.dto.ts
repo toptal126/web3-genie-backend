@@ -1,18 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ConversationResponseDto {
-  @ApiProperty()
+  @ApiProperty({ description: 'The ID of the conversation' })
   _id: string;
 
-  @ApiProperty()
-  user_id: string;
-
-  @ApiProperty()
+  @ApiProperty({ description: 'The title of the conversation' })
   title: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'The ID of the user who owns the conversation' })
+  user_id: string;
+
+  @ApiProperty({ description: 'When the conversation was created' })
   createdAt?: Date;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'When the conversation was last updated' })
   updatedAt?: Date;
 }
