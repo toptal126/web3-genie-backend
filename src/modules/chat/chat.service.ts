@@ -4,11 +4,11 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { OpenAIService } from './openai.service';
-import { ConversationModel } from './models/conversation.model';
-import { MessageModel } from './models/message.model';
-import { Conversation } from '../database/schemas/conversation.schema';
-import { Message } from '../database/schemas/message.schema';
+import { IConversation } from '../database/schemas/conversation.schema';
+import { IMessage } from '../database/schemas/message.schema';
 import { Web3Service } from '../web3/web3.service';
 import { MoralisApiService } from '../web3/third-party-api/moralis.api.service';
 import { HeliusApiService } from '../web3/third-party-api/helius.api.service';
@@ -22,6 +22,7 @@ import { SolscanApiService } from '@modules/web3/third-party-api/solscan.api.ser
 import { Types } from 'mongoose';
 import * as solanaArticles from './templates/articles/solana-articles.json';
 import { UserService } from '../user/user.service';
+import { ConversationResponseDto } from './dto/conversation.dto';
 
 interface TokenAnalysisDto {
   address: string;
@@ -32,8 +33,9 @@ interface TokenAnalysisDto {
 @Injectable()
 export class ChatService {
   constructor(
-    private conversationModel: ConversationModel,
-    private messageModel: MessageModel,
+    @InjectModel('Conversation')
+    private conversationModel: Model<IConversation>,
+    @InjectModel('Message') private messageModel: Model<IMessage>,
     private openaiService: OpenAIService,
     private readonly moralisApiService: MoralisApiService,
     private readonly heliusApiService: HeliusApiService,
@@ -43,35 +45,63 @@ export class ChatService {
     private readonly userService: UserService,
   ) {}
 
-  async createConversation(
+  async createOrUpdateEmptyConveration(
     walletAddress: string,
     title: string,
-  ): Promise<Conversation> {
-    const user = await this.userService.getUserByWalletAddress(walletAddress);
-
-    const latestConversation =
+  ): Promise<ConversationResponseDto> {
+    const conversation =
       await this.getOrCreateLatestConversation(walletAddress);
-    if (latestConversation.messages.length === 0) {
-      await this.conversationModel.update(
-        latestConversation.conversation.id,
-        title,
+    const user = await this.userService.getUserByWalletAddress(walletAddress);
+    if (conversation.messages.length === 0) {
+      // update the title of the conversation
+      const conversationId = (conversation.conversation as any)._id.toString();
+      await this.conversationModel.findByIdAndUpdate(
+        conversationId,
+        { title },
+        { new: true },
       );
-      latestConversation.conversation.title = title;
-      return latestConversation.conversation;
+      const updatedConversation =
+        await this.conversationModel.findById(conversationId);
+      if (!updatedConversation) {
+        throw new NotFoundException('Conversation not found after update');
+      }
+      const leanConversation = updatedConversation.toObject();
+      return {
+        _id: leanConversation._id,
+        title: leanConversation.title,
+        user_id: leanConversation.user_id,
+        createdAt: leanConversation.createdAt,
+        updatedAt: leanConversation.updatedAt,
+      };
+    } else {
+      // create a new conversation
+      const newConversation = await this.conversationModel.create({
+        user_id: user.id,
+        title,
+      });
+      const leanConversation = newConversation.toObject();
+      return {
+        _id: leanConversation._id,
+        title: leanConversation.title,
+        user_id: leanConversation.user_id,
+        createdAt: leanConversation.createdAt,
+        updatedAt: leanConversation.updatedAt,
+      };
     }
-
-    return this.conversationModel.create(user.id, title);
   }
 
-  async getConversations(walletAddress: string): Promise<Conversation[]> {
+  async getConversations(walletAddress: string): Promise<IConversation[]> {
     const user = await this.userService.getUserByWalletAddress(walletAddress);
-    return this.conversationModel.findByUserId(user.id);
+    return this.conversationModel
+      .find({ user_id: user.id })
+      .sort({ createdAt: -1 })
+      .lean();
   }
 
   async getConversation(
     conversationId: string,
     walletAddress: string,
-  ): Promise<{ conversation: Conversation; messages: Message[] }> {
+  ): Promise<{ conversation: IConversation; messages: IMessage[] }> {
     const conversation = await this.conversationModel.findById(conversationId);
     if (!conversation) {
       throw new NotFoundException(
@@ -86,43 +116,54 @@ export class ChatService {
       );
     }
 
-    const messages =
-      await this.messageModel.findByConversationId(conversationId);
-    return { conversation, messages };
+    const messages = await this.messageModel
+      .find({ conversation_id: conversationId })
+      .sort({ createdAt: 1 })
+      .exec();
+
+    return { conversation: conversation.toObject(), messages };
   }
 
   async getOrCreateLatestConversation(
     walletAddress: string,
-  ): Promise<{ conversation: Conversation; messages: Message[] }> {
+  ): Promise<{ conversation: IConversation; messages: IMessage[] }> {
     const user = await this.userService.getUserByWalletAddress(walletAddress);
-    const conversations = await this.conversationModel.findByUserId(user.id);
-    if (!conversations.length) {
+    const conversations = await this.conversationModel
+      .find({ user_id: user.id })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (conversations.length > 0) {
+      const latestConversation = conversations[0];
+      if (latestConversation.user_id.toString() !== user.id) {
+        throw new UnauthorizedException(
+          'You do not have access to this conversation',
+        );
+      }
+
+      const messages = await this.messageModel
+        .find({ conversation_id: latestConversation._id })
+        .sort({ createdAt: 1 })
+        .exec();
+      return { conversation: latestConversation, messages };
+    } else {
+      // Create a new conversation if none exists
+      const newConversation = await this.conversationModel.create({
+        user_id: user.id,
+        title: 'New Conversation',
+      });
       return {
-        conversation: await this.createConversation(
-          walletAddress,
-          'New Conversation',
-        ),
+        conversation: newConversation.toObject(),
         messages: [],
       };
     }
-
-    if (conversations[0].user_id.toString() !== user.id) {
-      throw new UnauthorizedException(
-        'You do not have access to this conversation',
-      );
-    }
-
-    const messages = await this.messageModel.findByConversationId(
-      conversations[0].id,
-    );
-    return { conversation: conversations[0], messages };
   }
 
   async sendMessage(
     conversationId: string,
     content: string,
     walletAddress: string,
-  ): Promise<Message> {
+  ): Promise<IMessage> {
     const conversation = await this.conversationModel.findById(conversationId);
     if (!conversation) {
       throw new NotFoundException(
@@ -138,22 +179,28 @@ export class ChatService {
     }
 
     // Store user message
-    await this.messageModel.create(conversationId, 'user', content);
+    await this.messageModel.create({
+      conversation_id: conversationId,
+      role: 'user',
+      content,
+    });
 
     // Get conversation history
-    const messages =
-      await this.messageModel.findByConversationId(conversationId);
+    const messages = await this.messageModel
+      .find({ conversation_id: conversationId })
+      .sort({ createdAt: 1 })
+      .exec();
 
     // Generate AI response
     const aiResponse =
       await this.openaiService.generateGeneralChatCompletion(messages);
 
     // Store AI response
-    const aiMessage = await this.messageModel.create(
-      conversationId,
-      'assistant',
-      aiResponse.content || 'No response generated',
-    );
+    const aiMessage = await this.messageModel.create({
+      conversation_id: conversationId,
+      role: 'assistant',
+      content: aiResponse.content || 'No response generated',
+    });
 
     return aiMessage;
   }
@@ -176,13 +223,29 @@ export class ChatService {
       );
     }
 
-    const deleted = await this.conversationModel.delete(conversationId);
-    return {
-      success: deleted,
-      message: deleted
-        ? 'Conversation and all associated messages deleted successfully'
-        : 'Conversation not found',
-    };
+    const session = await this.conversationModel.startSession();
+    try {
+      await session.withTransaction(async () => {
+        await this.messageModel
+          .deleteMany({ conversation_id: conversationId })
+          .session(session);
+        await this.conversationModel
+          .findByIdAndDelete(conversationId)
+          .session(session);
+      });
+      return {
+        success: true,
+        message:
+          'Conversation and all associated messages deleted successfully',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to delete conversation',
+      };
+    } finally {
+      session.endSession();
+    }
   }
 
   /**
@@ -250,11 +313,12 @@ export class ChatService {
       const tokenData = transformTokenData(rawData);
 
       // Get chat history if conversationId is provided
-      let chatHistory: Message[] = [];
+      let chatHistory: IMessage[] = [];
       if (conversationId) {
-        chatHistory = await this.messageModel.findByConversationId(
-          conversationId!,
-        );
+        chatHistory = await this.messageModel
+          .find({ conversation_id: conversationId })
+          .sort({ createdAt: 1 })
+          .exec();
       }
 
       // Generate system prompt for token analysis with news articles
@@ -283,16 +347,16 @@ export class ChatService {
         conversationId ?? new Types.ObjectId().toString();
 
       // add new message in user style requesting token analysis
-      this.messageModel.create(
-        conversationId,
-        'user',
-        `Analyze the token ${address} on the ${network} network`,
-      );
-      const responseMessage = await this.messageModel.create(
-        newConversationId,
-        'assistant',
-        response.content ?? 'No response generated',
-      );
+      this.messageModel.create({
+        conversation_id: conversationId,
+        role: 'user',
+        content: `Analyze the token ${address} on the ${network} network`,
+      });
+      const responseMessage = await this.messageModel.create({
+        conversation_id: newConversationId,
+        role: 'assistant',
+        content: response.content ?? 'No response generated',
+      });
 
       return responseMessage;
     } catch (error) {

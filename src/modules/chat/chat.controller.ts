@@ -20,6 +20,7 @@ import {
 } from '@nestjs/swagger';
 import { WalletAuthGuard } from '../auth/guards/wallet-auth.guard';
 import { Network as AlchemyNetwork } from 'alchemy-sdk';
+import { ConversationResponseDto } from './dto/conversation.dto';
 
 class TokenAnalysisDto {
   @ApiProperty({ description: 'Token address to analyze' })
@@ -56,12 +57,16 @@ export class ChatController {
   @ApiResponse({
     status: 201,
     description: 'Conversation created successfully',
+    type: ConversationResponseDto,
   })
-  async createConversation(
+  async createOrUpdateEmptyConveration(
     @Headers('x-wallet-address') walletAddress: string,
     @Body() body: { title: string },
-  ) {
-    return this.chatService.createConversation(walletAddress, body.title);
+  ): Promise<ConversationResponseDto> {
+    return this.chatService.createOrUpdateEmptyConveration(
+      walletAddress,
+      body.title,
+    );
   }
 
   @Get('conversation')

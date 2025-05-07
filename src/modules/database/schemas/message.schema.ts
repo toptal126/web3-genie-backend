@@ -1,17 +1,33 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
-import { Conversation } from './conversation.schema';
+import { Schema } from 'mongoose';
+import mongoose from 'mongoose';
 
-@Schema({ timestamps: true })
-export class Message extends Document {
-  @Prop({ type: Types.ObjectId, ref: 'Conversation', required: true })
-  conversation_id: Conversation;
-
-  @Prop({ required: true, enum: ['user', 'assistant', 'system'] })
-  role: string;
-
-  @Prop({ required: true })
+export interface IMessage {
+  _id: string;
+  conversation_id: string;
+  role: 'user' | 'assistant' | 'system';
   content: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-export const MessageSchema = SchemaFactory.createForClass(Message); 
+export const messageSchema = new Schema<IMessage>(
+  {
+    conversation_id: {
+      type: String,
+      required: true,
+      ref: 'Conversation',
+    },
+    role: {
+      type: String,
+      required: true,
+      enum: ['user', 'assistant', 'system'],
+    },
+    content: {
+      type: String,
+      required: true,
+    },
+  },
+  { timestamps: true },
+);
+
+export const MessageModel = mongoose.model<IMessage>('Message', messageSchema);
