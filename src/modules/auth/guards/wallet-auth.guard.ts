@@ -21,7 +21,9 @@ export class WalletAuthGuard implements CanActivate {
 
     try {
       const publicKey = new PublicKey(walletAddress);
-      const messageBytes = new TextEncoder().encode(message);
+      const messageBytes = new TextEncoder().encode(
+        `Access to forge.ai: ${message}`,
+      );
       const signatureBytes = Buffer.from(signature, 'base64');
 
       const isValid = nacl.sign.detached.verify(
