@@ -48,6 +48,18 @@ export class ChatService {
     title: string,
   ): Promise<Conversation> {
     const user = await this.userService.getUserByWalletAddress(walletAddress);
+
+    const latestConversation =
+      await this.getOrCreateLatestConversation(walletAddress);
+    if (latestConversation.messages.length === 0) {
+      await this.conversationModel.update(
+        latestConversation.conversation.id,
+        title,
+      );
+      latestConversation.conversation.title = title;
+      return latestConversation.conversation;
+    }
+
     return this.conversationModel.create(user.id, title);
   }
 

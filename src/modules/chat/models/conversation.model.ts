@@ -7,7 +7,8 @@ import { Message } from '../../database/schemas/message.schema';
 @Injectable()
 export class ConversationModel {
   constructor(
-    @InjectModel(Conversation.name) private conversationModel: Model<Conversation>,
+    @InjectModel(Conversation.name)
+    private conversationModel: Model<Conversation>,
     @InjectModel(Message.name) private messageModel: Model<Message>,
   ) {}
 
@@ -17,6 +18,14 @@ export class ConversationModel {
       title,
     });
     return conversation.save();
+  }
+
+  async update(id: string, title: string): Promise<Conversation | null> {
+    return this.conversationModel.findByIdAndUpdate(
+      id,
+      { title },
+      { new: true },
+    );
   }
 
   async findByUserId(userId: string): Promise<Conversation[]> {
@@ -34,7 +43,9 @@ export class ConversationModel {
     const session = await this.conversationModel.startSession();
     try {
       await session.withTransaction(async () => {
-        await this.messageModel.deleteMany({ conversation_id: id }).session(session);
+        await this.messageModel
+          .deleteMany({ conversation_id: id })
+          .session(session);
         await this.conversationModel.findByIdAndDelete(id).session(session);
       });
       return true;
@@ -44,4 +55,4 @@ export class ConversationModel {
       session.endSession();
     }
   }
-} 
+}
