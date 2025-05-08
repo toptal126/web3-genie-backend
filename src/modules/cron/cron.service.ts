@@ -28,7 +28,7 @@ export class CronService {
 
     const marketStatusText =
       this.topTierSymbols.length > 0
-        ? 'Here is current market status:  \n' +
+        ? 'Here is current BTC, SOL, ETH prices today, you must use this data to analyze the market:  \n' +
           this.topTierSymbols.map((symbol) => {
             const timeDiff =
               (currentTime.getTime() -

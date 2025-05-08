@@ -192,9 +192,10 @@ export class ChatService {
       .sort({ createdAt: 1 })
       .lean();
 
-    let systemPrompt = await this.cronService.extractMarketStatusText();
-    systemPrompt +=
+    const marketStatusText = await this.cronService.extractMarketStatusText();
+    let systemPrompt =
       'You are a helpful assistant that can answer questions and help with tasks related to web3, crypto, and blockchain. Keep answers brief and to the point.';
+    systemPrompt += `\n\n${marketStatusText}`;
 
     // If token addresses are found, analyze only the first one
     if (tokenAddresses.length > 0) {
@@ -242,11 +243,14 @@ export class ChatService {
 
       // Add token analysis to system prompt
       systemPrompt = `You are an expert Web3 financial analyst specializing in blockchain token analysis. Provide detailed, data-driven insights using market metrics, on-chain analytics, and security assessments. Format responses in professional markdown with clear sections, bullet points for key metrics, and citations for data sources. Include risk disclaimers and maintain objectivity in analysis.
+      ${marketStatusText}
 
-Token Analysis Data:
-Token Address: ${address}
-${JSON.stringify(tokenData, null, 2)}`;
+    Token Analysis Data:
+    Token Address: ${address}
+    ${JSON.stringify(tokenData, null, 2)}`;
     }
+    console.log(systemPrompt);
+    // throw new Error('test');
 
     // Generate AI response
     const aiResponse = await this.openaiService.generateChatCompletion(
