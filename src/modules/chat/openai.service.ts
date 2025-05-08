@@ -1,16 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
-import { SystemConfigModel } from '../database/models/system-config.model';
 
 @Injectable()
 export class OpenAIService {
   private openai: OpenAI;
 
-  constructor(
-    private configService: ConfigService,
-    private systemConfigModel: SystemConfigModel,
-  ) {
+  constructor(private configService: ConfigService) {
     this.openai = new OpenAI({
       apiKey: this.configService.get<string>('OPENAI_API_KEY'),
       baseURL: 'https://api.deepseek.com',

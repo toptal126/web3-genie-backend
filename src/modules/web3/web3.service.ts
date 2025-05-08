@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { EvmService } from './evm/evm.service';
 import { SolanaService } from './solana/solana.service';
-import { SystemConfigModel } from '../database/models/system-config.model';
 import {
   Network,
   TokenPriceResponse,
@@ -23,21 +22,11 @@ export class Web3Service implements Web3ServiceInterface {
   constructor(
     private evmService: EvmService,
     private solanaService: SolanaService,
-    private systemConfigModel: SystemConfigModel,
   ) {}
-
-  async isWeb3Enabled() {
-    const value = await this.systemConfigModel.get('web3_enabled');
-    return value === 'true';
-  }
 
   async getTokenPriceByAddress(
     addresses: TokenAddress[],
   ): Promise<Record<string, TokenPriceResponse>> {
-    if (!(await this.isWeb3Enabled())) {
-      throw new Error('Web3 features are disabled');
-    }
-
     const result: Record<string, TokenPriceResponse> = {};
 
     // Group addresses by network type
@@ -80,10 +69,6 @@ export class Web3Service implements Web3ServiceInterface {
     token: string,
     network: Network,
   ): Promise<TokenVolumeResponse> {
-    if (!(await this.isWeb3Enabled())) {
-      throw new Error('Web3 features are disabled');
-    }
-
     if (network.type === NetworkType.EVM) {
       return this.evmService.getTokenVolume(token, network.name);
     } else if (network.type === NetworkType.SOLANA) {
@@ -98,10 +83,6 @@ export class Web3Service implements Web3ServiceInterface {
     network: Network,
     options: TokenHolderOptions = {},
   ): Promise<TokenHoldersResponse> {
-    if (!(await this.isWeb3Enabled())) {
-      throw new Error('Web3 features are disabled');
-    }
-
     if (network.type === NetworkType.EVM) {
       return this.evmService.getTokenHolders(token, network.name, options);
     } else if (network.type === NetworkType.SOLANA) {

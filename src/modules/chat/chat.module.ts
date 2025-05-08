@@ -8,7 +8,7 @@ import { ConversationSchema } from '../database/schemas/conversation.schema';
 import { messageSchema } from '../database/schemas/message.schema';
 import { Web3Module } from '../web3/web3.module';
 import { UserModule } from '../user/user.module';
-import { SystemConfigModule } from '../database/system-config.module';
+import { CronService } from './cron.service';
 
 @Module({
   imports: [
@@ -17,12 +17,11 @@ import { SystemConfigModule } from '../database/system-config.module';
       { name: 'Conversation', schema: ConversationSchema },
       { name: 'Message', schema: messageSchema },
     ]),
-    SystemConfigModule,
     Web3Module,
     UserModule,
   ],
   controllers: [ChatController],
-  providers: [ChatService, OpenAIService],
+  providers: [ChatService, OpenAIService, CronService],
   exports: [ChatService],
 })
 export class ChatModule {}

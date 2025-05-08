@@ -3,7 +3,6 @@ import { Web3Service } from './web3.service';
 import { EvmModule } from './evm/evm.module';
 import { SolanaModule } from './solana/solana.module';
 import { DatabaseModule } from '../database/database.module';
-import { SystemConfigModule } from '../database/system-config.module';
 import { Web3Controller } from './web3.controller';
 import { ConfigModule } from '@nestjs/config';
 import { AlchemyApiService } from './third-party-api/alchemy.api.service';
@@ -15,14 +14,7 @@ import { MoralisApiService } from './third-party-api/moralis.api.service';
 import { HttpModule } from '@nestjs/axios';
 
 @Module({
-  imports: [
-    EvmModule,
-    SolanaModule,
-    DatabaseModule,
-    SystemConfigModule,
-    ConfigModule,
-    HttpModule,
-  ],
+  imports: [EvmModule, SolanaModule, DatabaseModule, ConfigModule, HttpModule],
   controllers: [Web3Controller],
   providers: [
     Web3Service,
