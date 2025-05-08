@@ -11,7 +11,6 @@ export class CronService {
 
   @Cron(CronExpression.EVERY_MINUTE, { name: 'Fetch Top Tier Symbols' })
   async fetchTopTierSymbols() {
-    console.log('fetchTopTierSymbols');
     this.topTierSymbols =
       await this.alchemyApiService.fetchTokenPricesBySymbols([
         'ETH',
@@ -30,13 +29,9 @@ export class CronService {
 ----------------------------------------
 ${this.topTierSymbols
   .map((symbol) => {
-    const timeDiff =
-      (currentTime.getTime() -
-        new Date(symbol.prices[0].lastUpdatedAt).getTime()) /
-      1000;
     return `• ${symbol.symbol.toUpperCase()} (${symbol.symbol === 'BTC' ? 'Bitcoin' : symbol.symbol === 'ETH' ? 'Ethereum' : 'Solana'}):
   Price: ${symbol.prices[0].value} ${symbol.prices[0].currency}
-  Last Update: ${Math.floor(timeDiff / 60)} minutes ago`;
+  Last Update: ${symbol.prices[0].lastUpdatedAt} minutes ago`;
   })
   .join('\n\n')}
 ----------------------------------------
