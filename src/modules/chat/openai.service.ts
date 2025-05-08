@@ -32,9 +32,9 @@ export class OpenAIService {
       const fullMessages = [
         {
           role: 'system',
-          content: systemPrompt,
+          content: systemPrompt, // Your critical market data & instructions
         },
-        ...messages,
+        ...messages, // The rest of the conversation (user & assistant messages)
       ];
 
       const options: any = {

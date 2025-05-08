@@ -11,6 +11,7 @@ export class CronService {
 
   @Cron(CronExpression.EVERY_MINUTE, { name: 'Fetch Top Tier Symbols' })
   async fetchTopTierSymbols() {
+    console.log('fetchTopTierSymbols');
     this.topTierSymbols =
       await this.alchemyApiService.fetchTokenPricesBySymbols([
         'ETH',
@@ -25,7 +26,7 @@ export class CronService {
 
     const marketStatusText =
       this.topTierSymbols.length > 0
-        ? `CRITICAL MARKET DATA - USE FOR ANALYSIS:
+        ? `CRITICAL MARKET DATA (BTC-bitcoin, ETH-ethereum, SOL-solana) - USE FOR ANALYSIS:
 ----------------------------------------
 ${this.topTierSymbols
   .map((symbol) => {
@@ -39,7 +40,7 @@ ${this.topTierSymbols
   })
   .join('\n\n')}
 ----------------------------------------
-IMPORTANT: Use these real-time prices as the foundation for your market analysis. Consider price movements, time differences, and market correlations in your response.`
+IMPORTANT: STRICTLY use ONLY the prices provided in this system message. Never use outdated prices from earlier messages.`
         : '';
 
     return marketStatusText;
