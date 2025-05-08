@@ -31,7 +31,7 @@ ${this.topTierSymbols
   .map((symbol) => {
     return `• ${symbol.symbol.toUpperCase()} (${symbol.symbol === 'BTC' ? 'Bitcoin' : symbol.symbol === 'ETH' ? 'Ethereum' : 'Solana'}):
   Price: ${symbol.prices[0].value} ${symbol.prices[0].currency}
-  Last Update: ${symbol.prices[0].lastUpdatedAt} minutes ago`;
+  Last Update: ${symbol.prices[0].lastUpdatedAt}`;
   })
   .join('\n\n')}
 ----------------------------------------
