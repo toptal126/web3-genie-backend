@@ -5,14 +5,11 @@ import { Cron, CronExpression, Interval } from '@nestjs/schedule';
 
 @Injectable()
 export class CronService {
-  private instanceId = Math.random().toString(36).substring(7);
-  private readonly logger = new Logger(CronService.name);
-
   private topTierSymbols: AlchemyPriceBySymbol[] = [];
 
   constructor(private alchemyApiService: AlchemyApiService) {}
 
-  @Cron(CronExpression.EVERY_10_SECONDS, { name: 'Fetch Top Tier Symbols' })
+  @Cron(CronExpression.EVERY_MINUTE, { name: 'Fetch Top Tier Symbols' })
   async fetchTopTierSymbols() {
     this.topTierSymbols =
       await this.alchemyApiService.fetchTokenPricesBySymbols([
