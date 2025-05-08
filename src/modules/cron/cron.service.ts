@@ -25,14 +25,21 @@ export class CronService {
 
     const marketStatusText =
       this.topTierSymbols.length > 0
-        ? 'Here is current BTC, SOL, ETH prices today, you must use this data to analyze the market:  \n' +
-          this.topTierSymbols.map((symbol) => {
-            const timeDiff =
-              (currentTime.getTime() -
-                new Date(symbol.prices[0].lastUpdatedAt).getTime()) /
-              1000;
-            return `${symbol.symbol}: ${symbol.prices[0].value} ${symbol.prices[0].currency}, updated at ${Math.floor(timeDiff / 1000)} seconds ago`;
-          })
+        ? `CRITICAL MARKET DATA - USE FOR ANALYSIS:
+----------------------------------------
+${this.topTierSymbols
+  .map((symbol) => {
+    const timeDiff =
+      (currentTime.getTime() -
+        new Date(symbol.prices[0].lastUpdatedAt).getTime()) /
+      1000;
+    return `• ${symbol.symbol.toUpperCase()} (${symbol.symbol === 'BTC' ? 'Bitcoin' : symbol.symbol === 'ETH' ? 'Ethereum' : 'Solana'}):
+  Price: ${symbol.prices[0].value} ${symbol.prices[0].currency}
+  Last Update: ${Math.floor(timeDiff / 60)} minutes ago`;
+  })
+  .join('\n\n')}
+----------------------------------------
+IMPORTANT: Use these real-time prices as the foundation for your market analysis. Consider price movements, time differences, and market correlations in your response.`
         : '';
 
     return marketStatusText;
