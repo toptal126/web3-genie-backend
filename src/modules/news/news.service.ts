@@ -5,7 +5,7 @@ import { Observable, catchError, map } from 'rxjs';
 import {
   NewsSearchResponse,
   NewsSearchParams,
-} from '../../interfaces/news.interface';
+} from './interfaces/news.interface';
 
 @Injectable()
 export class NewsService {

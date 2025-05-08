@@ -11,7 +11,7 @@ import { NewsService } from './news.service';
 import {
   NewsSearchResponse,
   NewsSearchParams,
-} from '@interfaces/news.interface';
+} from '@modules/news/interfaces/news.interface';
 
 @ApiTags('news')
 @Controller('news')

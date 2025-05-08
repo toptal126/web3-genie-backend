@@ -21,7 +21,7 @@
     "esModuleInterop": true,
     "paths": {
       "@modules/*": ["src/modules/*"],
-      "@interfaces/*": ["src/interfaces/*"],
+      "@interfaces/*": ["src/modules/news/interfaces/*"],
       "@config/*": ["src/config/*"],
       "@utils/*": ["src/utils/*"],
       "@decorators/*": ["src/decorators/*"],
