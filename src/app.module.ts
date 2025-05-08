@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
@@ -22,7 +21,6 @@ import { CronModule } from './modules/cron/cron.module';
       }),
       inject: [ConfigService],
     }),
-    ScheduleModule.forRoot(),
     AuthModule,
     ChatModule,
     Web3Module,

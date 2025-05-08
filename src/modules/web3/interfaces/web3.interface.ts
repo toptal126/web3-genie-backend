@@ -127,3 +127,12 @@ export interface SolscanTokenInfoResponse {
   market_cap_rank?: number;
   price_change_24h?: number;
 }
+
+export interface AlchemyPriceBySymbol {
+  symbol: string;
+  prices: {
+    currency: string;
+    value: string;
+    lastUpdatedAt: string;
+  }[];
+}

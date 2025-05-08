@@ -8,7 +8,7 @@ import { ConversationSchema } from './schemas/conversation.schema';
 import { messageSchema } from './schemas/message.schema';
 import { Web3Module } from '../web3/web3.module';
 import { UserModule } from '../user/user.module';
-
+import { CronService } from '../cron/cron.service';
 @Module({
   imports: [
     ConfigModule,
@@ -20,7 +20,7 @@ import { UserModule } from '../user/user.module';
     UserModule,
   ],
   controllers: [ChatController],
-  providers: [ChatService, OpenAIService],
+  providers: [ChatService, OpenAIService, CronService],
   exports: [ChatService],
 })
 export class ChatModule {}

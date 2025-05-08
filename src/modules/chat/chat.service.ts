@@ -23,7 +23,7 @@ import { Types } from 'mongoose';
 import * as solanaArticles from './templates/articles/solana-articles.json';
 import { UserService } from '../user/user.service';
 import { ConversationResponseDto } from './dto/conversation.dto';
-
+import { CronService } from '../cron/cron.service';
 interface TokenAnalysisDto {
   address: string;
   network?: AlchemyNetwork;
@@ -43,6 +43,7 @@ export class ChatService {
     private readonly pumpFunApiService: PumpFunApiService,
     private readonly solscanApiService: SolscanApiService,
     private readonly userService: UserService,
+    private readonly cronService: CronService,
   ) {}
 
   async createOrUpdateEmptyConveration(
@@ -191,7 +192,8 @@ export class ChatService {
       .sort({ createdAt: 1 })
       .lean();
 
-    let systemPrompt =
+    let systemPrompt = await this.cronService.extractMarketStatusText();
+    systemPrompt +=
       'You are a helpful assistant that can answer questions and help with tasks related to web3, crypto, and blockchain. Keep answers brief and to the point.';
 
     // If token addresses are found, analyze only the first one

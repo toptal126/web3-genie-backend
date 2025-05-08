@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Alchemy, Network as AlchemyNetwork } from 'alchemy-sdk';
 import { ConfigService } from '@nestjs/config';
-import { NETWORKS, NetworkType } from '../interfaces/web3.interface';
+import {
+  AlchemyPriceBySymbol,
+  NETWORKS,
+  NetworkType,
+} from '../interfaces/web3.interface';
 import axios from 'axios';
 
 interface AlchemyPriceResponse {
@@ -18,7 +22,6 @@ interface AlchemyPriceResponse {
 
 @Injectable()
 export class AlchemyApiService {
-  private alchemyInstances: Map<AlchemyNetwork, Alchemy>;
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
@@ -29,21 +32,6 @@ export class AlchemyApiService {
     }
     this.apiKey = apiKey;
     this.baseUrl = `https://api.g.alchemy.com/prices/v1/${this.apiKey}`;
-
-    this.alchemyInstances = new Map();
-
-    // Initialize Alchemy instances for different networks
-    NETWORKS.forEach((network) => {
-      if (network.type === NetworkType.EVM) {
-        this.alchemyInstances.set(
-          network.name,
-          new Alchemy({
-            apiKey: this.apiKey,
-            network: network.alchemyNetwork,
-          }),
-        );
-      }
-    });
   }
 
   async getTokenPriceByAddress(
@@ -110,5 +98,27 @@ export class AlchemyApiService {
     }
 
     return prices;
+  }
+
+  public async fetchTokenPricesBySymbols(
+    symbols: string[],
+  ): Promise<AlchemyPriceBySymbol[]> {
+    try {
+      const response = await axios.get(
+        `${this.baseUrl}/tokens/by-symbol?${symbols
+          .map((symbol) => `symbols=${symbol}`)
+          .join('&')}`,
+        {
+          headers: {
+            accept: 'application/json',
+          },
+        },
+      );
+
+      return response.data.data;
+    } catch (error) {
+      console.error(`Failed to fetch prices: ${error.message}`);
+      throw error;
+    }
   }
 }
