@@ -6,6 +6,7 @@ import { Cron, CronExpression, Interval } from '@nestjs/schedule';
 @Injectable()
 export class CronService {
   private topTierSymbols: AlchemyPriceBySymbol[] = [];
+  private readonly logger = new Logger(CronService.name);
 
   constructor(private alchemyApiService: AlchemyApiService) {}
 
@@ -17,10 +18,15 @@ export class CronService {
         'BTC',
         'SOL',
       ]);
+
+    this.logger.log(
+      `ETH: ${this.topTierSymbols[0].prices[0].value} ${this.topTierSymbols[0].prices[0].currency}, UpdatedAt: ${this.topTierSymbols[0].prices[0].lastUpdatedAt},
+      BTC: ${this.topTierSymbols[1].prices[0].value} ${this.topTierSymbols[1].prices[0].currency}, UpdatedAt: ${this.topTierSymbols[1].prices[0].lastUpdatedAt}
+      SOL: ${this.topTierSymbols[2].prices[0].value} ${this.topTierSymbols[2].prices[0].currency}, UpdatedAt: ${this.topTierSymbols[2].prices[0].lastUpdatedAt}`,
+    );
   }
 
   async extractMarketStatusText() {
-    const currentTime = new Date();
     if (this.topTierSymbols.length === 0) await this.fetchTopTierSymbols();
 
     const marketStatusText =
