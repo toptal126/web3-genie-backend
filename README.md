@@ -4,7 +4,7 @@ The backend API service for Forge AI, a powerful Web3 AI platform. This service 
 
 ## 🔗 Links
 
-- [Frontend Application](https://forge.ai)
+- [Frontend Application](https://forgeonchain.ai)
 - [Technical Documentation](docs/readme.md)
 
 ## ✨ Features
