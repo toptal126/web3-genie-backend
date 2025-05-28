@@ -22,6 +22,7 @@ import { WalletAuthGuard } from '../auth/guards/wallet-auth.guard';
 import { Network as AlchemyNetwork } from 'alchemy-sdk';
 import { ConversationResponseDto } from './dto/conversation.dto';
 import { PublicKey } from '@solana/web3.js';
+import { CronService } from '../cron/cron.service';
 
 class TokenAnalysisDto {
   @ApiProperty({ description: 'Token address to analyze' })
@@ -40,7 +41,10 @@ class TokenAnalysisDto {
 @Controller('chat')
 @UseGuards(WalletAuthGuard)
 export class ChatController {
-  constructor(private chatService: ChatService) {}
+  constructor(
+    private chatService: ChatService,
+    private cronService: CronService,
+  ) {}
 
   @Post('conversations')
   @ApiOperation({ summary: 'Create a new conversation' })
@@ -177,5 +181,31 @@ export class ChatController {
       tokenAnalysisDto,
       walletAddress,
     );
+  }
+
+  @Get('test-market-status')
+  @ApiOperation({ summary: 'Test route for market status extraction' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the current market status text',
+  })
+  async testMarketStatus() {
+    try {
+      // Always fetch fresh data for the test endpoint
+      // await this.cronService.fetchTopTierSymbols();
+      const statusText = await this.cronService.extractMarketStatusText();
+
+      // Log the response for debugging
+      console.log('Market Status Response:', statusText);
+
+      return {
+        status: 'success',
+        data: statusText,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error('Error fetching market status:', error);
+      throw error;
+    }
   }
 }
