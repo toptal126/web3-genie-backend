@@ -12,6 +12,9 @@ export class CronService {
 
   @Cron(CronExpression.EVERY_MINUTE, { name: 'Fetch Top Tier Symbols' })
   async fetchTopTierSymbols() {
+    try {
+    this.logger.log('Fetching top tier symbols...');
+
     this.topTierSymbols =
       await this.alchemyApiService.fetchTokenPricesBySymbols([
         'ETH',
@@ -24,6 +27,10 @@ export class CronService {
       BTC: ${this.topTierSymbols[1].prices[0].value} ${this.topTierSymbols[1].prices[0].currency}, UpdatedAt: ${this.topTierSymbols[1].prices[0].lastUpdatedAt}
       SOL: ${this.topTierSymbols[2].prices[0].value} ${this.topTierSymbols[2].prices[0].currency}, UpdatedAt: ${this.topTierSymbols[2].prices[0].lastUpdatedAt}`,
     );
+  } catch (error) {
+    this.logger.error('Error fetching top tier symbols', error);
+    throw error;
+    }
   }
 
   async extractMarketStatusText() {
